@@ -35,6 +35,6 @@ peak_threshold = 33000
 sampling_interval = 10
 detected_peaks = detect_peaks(hb_data, peak_threshold, sampling_interval)
 
-print("Detected Peaks with Timestamps (ms):")
+print("Detected Peaks with Timestamps")
 for timestamp, value in detected_peaks:
     print(f"Time: {timestamp} ms, Peak Value: {value}")
