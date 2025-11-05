@@ -38,18 +38,3 @@ detected_peaks = detect_peaks(hb_data, peak_threshold, sampling_interval)
 print("Detected Peaks with Timestamps (ms):")
 for timestamp, value in detected_peaks:
     print(f"Time: {timestamp} ms, Peak Value: {value}")
-
-# Heart rate from timestamps
-if len(detected_peaks) > 2:
-    intervals = []
-    for i in range(1, len(detected_peaks)):
-        delta_ms = detected_peaks[i][0] - detected_peaks[i-1][0]
-        intervals.append(delta_ms / 1000)
-
-    average_interval = sum(intervals) / len(intervals)
-    bpm = 60 / average_interval
-
-
-    print(f"\nEstimated Heart Rate: {bpm:.2f} BPM")
-else:
-    print("\nNot enough peaks to estimate heart rate.")
