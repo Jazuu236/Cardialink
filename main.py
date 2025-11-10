@@ -23,8 +23,7 @@ encoder_B = Pin(11, Pin.IN, Pin.PULL_UP)
 button = Pin(12, Pin.IN, Pin.PULL_UP)
 
 # ADC
-adc0 = ADC(Pin(26))
-adc1 = ADC(Pin(27))
+adc = ADC(Pin(26))
 
 # FIFO
 fifo =[]
