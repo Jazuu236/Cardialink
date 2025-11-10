@@ -28,3 +28,10 @@ adc = ADC(Pin(26))
 # FIFO
 fifo =[]
 
+def encoder_turn(pin):
+    if encoder_B.value() != encoder_A.value():
+        fifo.append("Right")
+    else:
+        fifo.append("Left")
+
+encoder_A.irq(trigger=Pin.IRQ_RISING | Pin.IRQ_FALLING, handler=encoder_turn)
