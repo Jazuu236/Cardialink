@@ -55,3 +55,6 @@ adc1 = ADC(Pin(PIN_ADC1))
 
 # FIFO
 fifo = []
+
+
+# Code
