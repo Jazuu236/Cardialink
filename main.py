@@ -28,6 +28,7 @@ adc = ADC(Pin(26))
 # FIFO
 fifo =[]
 
+# Encoder turn
 def encoder_turn(pin):
     if encoder_B.value() != encoder_A.value():
         fifo.append("Right")
