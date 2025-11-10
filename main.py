@@ -1,6 +1,7 @@
-from machine import ADC, Pin, I2C
+from piotimer import Piotimer as Timer
 from ssd1306 import SSD1306_I2C
-from filefifo import Filefifo
+from machine import Pin, ADC, I2C, PWM
+from fifo import Fifo
 import time
 
 # ==========================
