@@ -24,7 +24,7 @@ button = Pin(12, Pin.IN, Pin.PULL_UP)
 
 # ADC
 adc0 = ADC(Pin(26))
-adc1 = ADC(Pin(2))
+adc1 = ADC(Pin(27))
 
 # FIFO
 fifo =[]
