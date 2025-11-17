@@ -32,7 +32,7 @@ def cache_update(value):
 def cache_get_peak_value():
     segment_size = len(DYNAMIC_CACHE) // 12
     peaks = []
-    for i in range(10):
+    for i in range(12):
         segment = DYNAMIC_CACHE[i*segment_size:(i+1)*segment_size]
         if segment:
             peaks.append(max(segment))
