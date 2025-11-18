@@ -50,7 +50,7 @@ class cGUI:
 
     def draw_measure_pre(self, quality, percentage_prepared):
         global heartbeat_first_met_all_criteria_timestamp
-        print(len(measurer.PEAK_CACHE))
+        #print(len(measurer.PEAK_CACHE))
         self.oled.fill(0)
         self.oled.text(quality, 0, 10)
         if int(percentage_prepared) < 100:
@@ -75,7 +75,7 @@ class cGUI:
                     except IndexError:
                         pass
             ratio = legal_beats_count / (legal_beats_count + illegal_beats_count)
-            print("Legal beats: " + str(legal_beats_count) + " Illegal beats: " + str(illegal_beats_count) + " Ratio: " + str(ratio))
+            #print("Legal beats: " + str(legal_beats_count) + " Illegal beats: " + str(illegal_beats_count) + " Ratio: " + str(ratio))
 
             all_checks_passed = True
 
@@ -113,42 +113,35 @@ class cGUI:
     def draw_measure(self, heart_rate):
         graph_height = self.oled.height - 10
         baseline = 10
-        new_value = measurer.DYNAMIC_CACHE[-1]
 
-        if getattr(self, 'last_peak_count', -1) != len(measurer.PEAK_CACHE):
-            self.last_peak_count = len(measurer.PEAK_CACHE)
-            if len(measurer.PEAK_CACHE) >= 2:
-                total_time = measurer.PEAK_CACHE[-1].timestamp - measurer.PEAK_CACHE[0].timestamp
-                self.BPM = (len(measurer.PEAK_CACHE)-1) * 60_000 // max(total_time, 1)
-            else:
-                self.BPM = 0
+        window = measurer.DYNAMIC_CACHE[-5:]
+        if len(window) < 2:
+            return  # Need at least 2 points to draw lines
 
-        if time.ticks_diff(time.ticks_ms(), getattr(self, 'last_text', 0)) > 200:
-            self.oled.fill_rect(0, 0, self.oled.width, 10, 0)
-            self.oled.text(f"HR: {self.BPM} BPM", 0, 0)
-            self.last_text = time.ticks_ms()
+        # Determine vertical scaling
+        min_val = min(window)
+        max_val = max(window)
+        rng = max(max_val - min_val, 1)
 
-        if not hasattr(self, 'min_val'):
-            self.min_val = new_value
-            self.max_val = new_value
-            self.graph_buffer = [baseline + graph_height//2]*self.oled.width
+        # Clear graph area
+        for x in range(self.oled.width):
+            for y in range(baseline, baseline + graph_height):
+                self.oled.pixel(x, y, 0)
 
-        self.min_val = min(self.min_val, new_value)
-        self.max_val = max(self.max_val, new_value)
-        rng = max(self.max_val - self.min_val, 1)
+        # Map window values into (x,y) positions
+        points = []
+        step = self.oled.width // (len(window) - 1)
 
-        y = baseline + graph_height - ((new_value - self.min_val) * graph_height // rng)
+        for i, val in enumerate(window):
+            x = i * step
+            y = baseline + graph_height - ((val - min_val) * graph_height // rng)
+            points.append((x, y))
 
-        self.graph_buffer.pop(0)
-        self.graph_buffer.append(y)
+        # Draw lines between each pair of points
+        for i in range(len(points) - 1):
+            x1, y1 = points[i]
+            x2, y2 = points[i + 1]
+            self.oled.line(x1, y1, x2, y2, 1)
 
-        self.oled.fill_rect(0, baseline, self.oled.width, graph_height, 0)
-        for x, y_val in enumerate(self.graph_buffer):
-            self.oled.pixel(x, y_val, 1)
-
-        if time.ticks_diff(time.ticks_ms(), getattr(self, 'last_show', 0)) > 50:
-            self.oled.show()
-            self.last_show = time.ticks_ms()
-
-
-   
+        # Refresh display
+        self.oled.show()
