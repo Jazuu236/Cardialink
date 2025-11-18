@@ -160,13 +160,7 @@ def __main__():
                 CURRENT_PAGE = PAGE_MEASURE
 
         elif CURRENT_PAGE == PAGE_MEASURE:
-            #Calculate BPM from peaks in measurer.PEAK_CACHE
-            BPM = 0
-            if len(measurer.PEAK_CACHE) >= 2:
-                total_time = measurer.PEAK_CACHE[-1].timestamp - measurer.PEAK_CACHE[0].timestamp
-                if total_time > 0:
-                    BPM = (len(measurer.PEAK_CACHE) - 1) * 60_000 // total_time
-            gui.draw_measure(BPM)
+            gui.draw_measure(60)
             print("Time to draw measure page: " + str(time.ticks_diff(time.ticks_ms(), call_time_start)) + " ms")
 
 
