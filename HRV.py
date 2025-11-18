@@ -1,34 +1,24 @@
-# meanPPI from hr
-def meanPPI_calculator(hr_list):
-    ppi_values = [60000 / hr for hr in hr_list]
-    return sum(ppi_values) / len(ppi_values)
-
-# meanHr form PPIa
-def meanHR_calculator(meanPPI):
-    return 60000 / mean_ppi
-
-# SDNN calculator
-def SDNN_calculator(ppi_list):
-    mean_ppi = sum(ppi_list) / len(ppi_list)
-    return ((sum((x-mean_ppi) ** 2 for x in ppi_list) / (len(ppi_list) - 1)) ** 0.5)
-
-# RMSSD calculator
-def RMSSD_calculator(ppi_list):
+# HRV analysis
+def hrv_analysis(hr_list):
+    ppi_list = [60000 / hr for hr in hr_list]
+    
+    # Mean PPI
+    mean_ppi = round(sum(ppi_list) / len(ppi_list))
+    mean_ppi = int(mean_ppi)
+    
+    # Mean HR
+    mean_hr = int(round(60000 / mean_ppi))
+    
+    # SDNN
+    sdnn = round((sum((x - mean_ppi) ** 2 for x in ppi_list) / (len(ppi_list) - 1)) ** 0.5)
+    
+    # RMSSD
     diffs = [(ppi_list[i+1] - ppi_list[i]) ** 2 for i in range(len(ppi_list)-1)]
-    return (sum(diffs) / len(diffs) ** 0.5)
-                 
-# HR data
-hr_data = []
+    rmssd = round((sum(diffs) / len(diffs)) ** 0.5)
 
-# Diffrent values
-ppi_values = [60000 / hr for hr in hr_data]
-mean_ppi = meanPPI_calculator(hr_data)
-mean_hr = meanHR_calculator(mean_ppi)
-sdnn = SDNN_calculator(ppi_values)
-rmssd = RMSSD_calculator(ppi_values)
-
-
-print("Mean PPI:", round(mean_ppi), "ms")
-print("Mean HR:", round(mean_hr), "bpm")
-print("SDNN:", round(sdnn), "ms")
-print("RMSSD:", round(rmssd), "ms")
+    return {
+        "mean_ppi": mean_ppi,
+        "mean_hr": mean_hr,
+        "sdnn": sdnn,
+        "rmssd": rmssd
+    }
