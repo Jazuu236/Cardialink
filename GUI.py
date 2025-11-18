@@ -20,17 +20,17 @@ class cGUI:
         else:
             self.oled.text("   Measure HR", 0, 0)
         if (current_selection == 1):
-            self.oled.text("-> Demo option 2", 0, 10)
+            self.oled.text("-> Basic HRV", 0, 10)
         else:
-            self.oled.text("   Demo option 2", 0, 10)
+            self.oled.text("   Basic HRV", 0, 10)
         if (current_selection == 2):
-            self.oled.text("-> Demo option 3", 0, 20)
+            self.oled.text("-> History", 0, 20)
         else:
-            self.oled.text("   Demo option 3", 0, 20)
+            self.oled.text("   History", 0, 20)
         if (current_selection == 3):
-            self.oled.text("-> Demo option 4", 0, 30)
+            self.oled.text("-> Kubios", 0, 30)
         else:
-            self.oled.text("   Demo option 4", 0, 30)
+            self.oled.text("   Kubios", 0, 30)
         if (current_selection == 4):
             self.oled.text("-> Settings", 0, 40)
         else:
