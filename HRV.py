@@ -22,6 +22,3 @@ def hrv_analysis(hr_list):
         "sdnn": sdnn,
         "rmssd": rmssd
     }
-
-hr_data = []
-results_hrv = hrv_analysis(hr_data)
