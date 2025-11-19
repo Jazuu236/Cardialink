@@ -1,10 +1,10 @@
-import mip
 import network
 from time import sleep
 
+
+# Network
 SSID = "KME759_Group_1"
 PASSWORD = "!Paska123!"
-BROKER_IP = "192.168.1.253"
 
 def connect_wlan():
     wlan = network.WLAN(network.STA_IF)
