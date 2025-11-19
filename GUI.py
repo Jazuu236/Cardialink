@@ -32,9 +32,9 @@ class cGUI:
         else:
             self.oled.text("   Kubios", 0, 30)
         if (current_selection == 4):
-            self.oled.text("-> Settings", 0, 40)
+            self.oled.text("-> Settings (EXIT)", 0, 40)
         else:
-            self.oled.text("   Settings", 0, 40)
+            self.oled.text("   Settings (EXIT)", 0, 40)
 
         current_time = time.ticks_ms()
         current_time = time.ticks_ms()

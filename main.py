@@ -83,6 +83,19 @@ def encoder_turn(pin):
             INPUT_HANDLER_current_position -= 0.35
         
 
+def gracefully_exit():
+    print("Shutting down...")
+    oled.fill(0)
+    oled.text("Shutdown", 0, 20)
+    oled.show()
+    led1.value(0)
+    led2.value(0)
+    led3.value(0)
+    #Remove the IRQ
+    encoder_A.irq(handler=None)
+    #Shutdown the screen
+    oled.poweroff()
+
 def pulse_timer_callback(timer):
     global PEAK_WAS_ALREADY_RECORDED
     if (CURRENT_PAGE != PAGE_MEASURE_PRE and CURRENT_PAGE != PAGE_MEASURE):
@@ -175,7 +188,10 @@ def __main__():
             if current_selection_index == 0:
                 #Measure HR selected
                 CURRENT_PAGE = PAGE_MEASURE_PRE
-
+            elif current_selection_index == 4:
+                #Settings (EXIT) selected
+                gracefully_exit()
+                break
     
     
 if __name__ == "__main__":
