@@ -1,5 +1,6 @@
 import time
 import measurer
+import panic
 
 heartbeat_first_met_all_criteria_timestamp = 0
 
@@ -32,9 +33,9 @@ class cGUI:
         else:
             self.oled.text("   Kubios", 0, 30)
         if (current_selection == 4):
-            self.oled.text("-> Settings (EXIT)", 0, 40)
+            self.oled.text("-> Settings EXIT", 0, 40)
         else:
-            self.oled.text("   Settings (EXIT)", 0, 40)
+            self.oled.text("   Settings EXIT", 0, 40)
 
         current_time = time.ticks_ms()
         current_time = time.ticks_ms()
@@ -49,62 +50,27 @@ class cGUI:
         self.oled.show()
 
     def draw_measure_pre(self, quality, percentage_prepared):
-        global heartbeat_first_met_all_criteria_timestamp
-        #print(len(measurer.PEAK_CACHE))
         self.oled.fill(0)
-        self.oled.text(quality, 0, 10)
-        if int(percentage_prepared) < 100:
-            self.oled.text("Please wait...", 0, 30)
-            self.oled.text("Calibrating", 0, 40)
-            self.oled.text("Step 1. | " + str(int(percentage_prepared)) + "%", 0, 50)
+        #Display current read
+        if len(measurer.CACHE_STORAGE_200) == 0:
+            self.oled.text("Read: N/A", 0, 0)
         else:
-            legal_beats_count = 0
-            illegal_beats_count = 0
-            last_beat_time = 0
-            for i in range(len(measurer.PEAK_CACHE)):
-                if i == 0:
-                    legal_beats_count += 1
-                else:
-                    try:
-                        time_diff = measurer.PEAK_CACHE[i].timestamp - measurer.PEAK_CACHE[i-1].timestamp
-                        last_beat_time = measurer.PEAK_CACHE[i].timestamp
-                        if time_diff > 300 and time_diff < 2000:
-                            legal_beats_count += 1
-                        else:
-                            illegal_beats_count += 1
-                    except IndexError:
-                        pass
-            ratio = legal_beats_count / (legal_beats_count + illegal_beats_count)
-            #print("Legal beats: " + str(legal_beats_count) + " Illegal beats: " + str(illegal_beats_count) + " Ratio: " + str(ratio))
+            self.oled.text("Read: " + str(measurer.CACHE_STORAGE_200[-1]), 0, 0)
+        peak_value = measurer.cache_get_peak_value(measurer.CACHETYPE_200)
+        if peak_value == 0:
+            self.oled.text("Peak: N/A", 0, 10)
+        else:
+            rate_ratio = measurer.CACHE_STORAGE_200[-1] / peak_value
+            self.oled.text("Peak: " + "{0:.2f}x".format(rate_ratio), 0, 10)
+        difference = peak_value - measurer.cache_get_average_value(measurer.CACHETYPE_200)
+        self.oled.text("Diff: " + str(int(difference)), 0, 20)
+        if peak_value == 0:
+            self.oled.text("R: N/A", 0, 30)
+        else:
+            dashes_to_display = int((measurer.CACHE_STORAGE_200[-1] - measurer.cache_get_average_value(measurer.CACHETYPE_200)) / (difference * 0.1))
+            self.oled.text("R: " + ("-" * dashes_to_display), 0, 30)
 
-            all_checks_passed = True
-
-            if legal_beats_count < 3:
-                self.oled.text("Not enough data.", 0, 40)
-                all_checks_passed = False
-                heartbeat_first_met_all_criteria_timestamp = 0
-            
-            elif (last_beat_time < time.ticks_ms() - 2500):
-                self.oled.text("Data too old.", 0, 40)
-                all_checks_passed = False
-                heartbeat_first_met_all_criteria_timestamp = 0
-
-            elif ratio < 0.7:
-                self.oled.text("Bad read:" + str(int(ratio * 100)) + "%", 0, 40)
-                all_checks_passed = False
-                heartbeat_first_met_all_criteria_timestamp = 0
-            else:
-                self.oled.text("Almost there...", 0, 40)
-                
-            if all_checks_passed:
-                if heartbeat_first_met_all_criteria_timestamp == 0:
-                    heartbeat_first_met_all_criteria_timestamp = time.ticks_ms()
-                delta = time.ticks_diff(time.ticks_ms(), heartbeat_first_met_all_criteria_timestamp)
-                self.oled.text("Starting in " + str(5 - (delta // 1000)), 0, 50)
-
-                if delta >= 5000:
-                    return True
-
+        
         self.oled.show()
         return False
 

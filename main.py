@@ -1,3 +1,4 @@
+import sys
 from piotimer import Piotimer
 from ssd1306 import SSD1306_I2C
 from machine import Pin, ADC, I2C, Timer
@@ -5,6 +6,7 @@ from filefifo import Filefifo
 import time
 import GUI
 import measurer
+import panic
 
 
 #GUI Page constants
@@ -98,30 +100,26 @@ def gracefully_exit():
 
 def pulse_timer_callback(timer):
     global PEAK_WAS_ALREADY_RECORDED
-    if (CURRENT_PAGE != PAGE_MEASURE_PRE and CURRENT_PAGE != PAGE_MEASURE):
+    if (CURRENT_PAGE != PAGE_MEASURE_PRE):
         return
-    global PULSE_quality
-    global PULSE_percentage_prepared
     global measurer
     raw_value = adc.read_u16()  # Read 16-bit ADC value (0–65535)
     if ((raw_value < LEGAL_LOW) or (raw_value > LEGAL_HIGH)):
         return 
-    avg_value = measurer.cache_update(raw_value)
-    #("val: " + str(raw_value) + "avg:" + str(avg_value) + "len:" + str(len(measurer.DYNAMIC_CACHE)) + "tresh:" + str((measurer.cache_get_peak_value()))+ " R: " + str(measurer.cache_get_peak_ratio()))
-    PULSE_quality = measurer.get_reading_quality(measurer.cache_get_peak_ratio())
-    PULSE_percentage_prepared = int(measurer.get_percent_prepared())
-    if ((raw_value > (measurer.cache_get_peak_value()) * 0.99)):
-        measurer.control_led(1)
-        peak = measurer.cBeat(time.ticks_ms(), raw_value)
+    #Update both caches
+    measurer.cache_update(measurer.CACHETYPE_200, raw_value)
+    measurer.cache_update(measurer.CACHETYPE_DYNAMIC, raw_value)
 
-        if PEAK_WAS_ALREADY_RECORDED:
-            return
-        measurer.add_to_peak_cache(peak)
-        PEAK_WAS_ALREADY_RECORDED = True
+    #Get the peak out of 200
+    peak_value = measurer.cache_get_peak_value(measurer.CACHETYPE_200)
+    if (peak_value == 0):
+        return
+    average_value = measurer.cache_get_average_value(measurer.CACHETYPE_200)
+    difference = peak_value - average_value
+    if (raw_value >= (average_value + difference * 0.6)):
+        measurer.control_led(1)
     else:
         measurer.control_led(0)
-        PEAK_WAS_ALREADY_RECORDED = False
-    
 
 encoder_A.irq(trigger=Pin.IRQ_RISING | Pin.IRQ_FALLING, handler=encoder_turn)
 
@@ -158,6 +156,10 @@ def __main__():
 
         if not INPUT_HANDLER_button_has_been_released and button.value() == 1:
             INPUT_HANDLER_button_has_been_released = True
+
+        if panic.must_exit:
+            print("###PANIC### " + panic.exit_reason)
+            gracefully_exit()
 
         #------------------------------------
         #--------------PAGES-----------------
