@@ -3,8 +3,7 @@ def hrv_analysis(hr_list):
     ppi_list = [60000 / hr for hr in hr_list]
     
     # Mean PPI
-    mean_ppi = round(sum(ppi_list) / len(ppi_list))
-    mean_ppi = int(mean_ppi)
+    mean_ppi = int(round(sum(ppi_list) / len(ppi_list)))
     
     # Mean HR
     mean_hr = int(round(60000 / mean_ppi))
