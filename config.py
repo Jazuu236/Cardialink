@@ -1,7 +1,6 @@
 import network
 from time import sleep
 
-
 # Network
 SSID = "KME759_Group_1"
 PASSWORD = "!Paska123!"
