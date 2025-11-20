@@ -2,12 +2,18 @@ import network
 from time import sleep
 from umqtt.simple import MQTTClient
 
+#MAC
+wlan_sta = network.WLAN(network.STA_IF)
+wlan_sta.active(True)
+wlan_mac = wlan_sta.config('mac')
+print(wlan_mac.hex().upper())
+
 #Network
 SSID = "KME759_Group_1"
 PASSWORD = "!Paska123!"
 BROKER_IP = "192.168.1.253"
 BROKER_PORT = 21883
-EXAMPLE_MAC = "D83ADD5910DF"
+mac = wlan_mac.hex().upper()
 
 def connect_wlan():
     wlan = network.WLAN(network.STA_IF)  # "STA_IF" = station mode (client)
@@ -52,7 +58,7 @@ if __name__ == "__main__":
     # 4. Copy the Kubios request payload from info page
     kubios_payload = (
         '{'
-        '"mac": "' + EXAMPLE_MAC + '",'
+        '"mac": "' + mac + '",'
         '"type": "RRI",'
         '"data": [828, 836, 852, 760, 800, 796, 856, 824, 808, 776, '
                   '724, 816, 800, 812, 812, 812, 756, 820, 812, 800],'
