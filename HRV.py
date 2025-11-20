@@ -20,7 +20,7 @@ def hrv_analysis(ppi_data):
         "SDNN": sdnn,
         "RMSSD": rmssd
     }
-# Test
+# TEST DATA
 peak_to_peak_interval_data = [
     960, 945, 930, 948, 955,
     970, 980, 965, 950, 940,
