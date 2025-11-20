@@ -3,8 +3,9 @@ import urequests
 import os
 
 # Files
-lib_url = "https://raw.githubusercontent.com/Jazuu236/Cardio-Link/b5077876425225fda96d99ec72d399b2a258f6c9/lib"
-files = ["fifo.py", "filefifo.py", "led.py", "piotimer.py", "ssd1306.mpy", "ssl.mpy"]
+lib_url = "https://gitlab.metropolia.fi/lansk/pico-lib/-/raw/main"
+files = ["fifo.py", "filefifo.py", "led.py", "piotimer.py", "ssd1306.mpy"]
+
 
 # Check and create lib folder
 try:
@@ -14,7 +15,7 @@ except OSError:
 
 for fname in files:
     url = lib_url + "/" + fname
-    print(f"Downloading: {fname}...")
+    print(f"Downloading: {fname}!")
     r = urequests.get(url)
     with open("lib/" + fname, "wb") as f:
         f.write(r.content)
