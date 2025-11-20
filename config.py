@@ -13,7 +13,7 @@ SSID = "KME759_Group_1"
 PASSWORD = "!Paska123!"
 BROKER_IP = "192.168.1.253"
 BROKER_PORT = 21883
-mac = wlan_mac.hex().upper()
+MAC = wlan_mac.hex().upper()
 
 def connect_wlan():
     wlan = network.WLAN(network.STA_IF)  # "STA_IF" = station mode (client)
@@ -58,7 +58,7 @@ if __name__ == "__main__":
     # 4. Copy the Kubios request payload from info page
     kubios_payload = (
         '{'
-        '"mac": "' + mac + '",'
+        '"mac": "' + MAC + '",'
         '"type": "RRI",'
         '"data": [828, 836, 852, 760, 800, 796, 856, 824, 808, 776, '
                   '724, 816, 800, 812, 812, 812, 756, 820, 812, 800],'
