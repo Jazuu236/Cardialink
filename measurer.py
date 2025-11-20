@@ -4,19 +4,31 @@ import panic
 
 CACHETYPE_200 = 0
 CACHETYPE_DYNAMIC = 1
+CACHETYPE_BEATS = 2
 
 CACHE_STORAGE_200 = [] #This cache has 200 readings (2 seconds of data), it is used for calibrating the peak value.
 CACHE_STORAGE_DYNAMIC = [] #This cache stores every reading.
+CACHE_STORAGE_BEATS = [] #This cache stores detected peaks as cBeat objects.
 
+class cBeat:
+    def __init__(self, timestamp_ms):
+        self.timestamp_ms = timestamp_ms
+        
+    def age(self):
+        return time.ticks_diff(time.ticks_ms(), self.timestamp_ms)
 
 LED_PINS = [20, 21, 22]
 leds = [Pin(pin, Pin.OUT) for pin in LED_PINS]
     
-def add_to_peak_cache(beat):
-    global PEAK_CACHE
-    PEAK_CACHE.append(beat)
-    #Remove old beats
-    PEAK_CACHE = [b for b in PEAK_CACHE if b.age() < 5_000]
+def add_to_beat_cache(beat):
+    global CACHE_STORAGE_BEATS
+    CACHE_STORAGE_BEATS.append(beat)
+    CACHE_STORAGE_BEATS = [b for b in CACHE_STORAGE_BEATS if b.age() <= 30000]
+
+
+def get_beat_cache_length():
+    global CACHE_STORAGE_BEATS
+    return len(CACHE_STORAGE_BEATS)
     
         
 def cache_update(cache_type, value):
@@ -37,13 +49,15 @@ def cache_update(cache_type, value):
 def clear_cache(cache_type):
     global CACHE_STORAGE_200
     global CACHE_STORAGE_DYNAMIC
+    global CACHE_STORAGE_BEATS
     if cache_type == CACHETYPE_200:
         CACHE_STORAGE_200 = []
     elif cache_type == CACHETYPE_DYNAMIC:
         CACHE_STORAGE_DYNAMIC = []
+    elif cache_type == CACHETYPE_BEATS:
+        CACHE_STORAGE_BEATS = []
     else:
         panic.panic("measurer.clear_cache called with invalid cache_type: " + str(cache_type))
-
 
 
 def cache_get_peak_value(cache_type):
@@ -92,6 +106,21 @@ def cache_get_average_value(cache_type):
     else:
         panic.panic("measurer.cache_get_average_value called with invalid cache_type: " + str(cache_type))
         return 0
+
+def dynamic_cache_get_average_peak_value():
+    #Split the cache into 2 second segments, get the peak of each segment, then average those peaks.
+    global CACHE_STORAGE_DYNAMIC
+    if len(CACHE_STORAGE_DYNAMIC) == 0:
+        return 0
+    segment_length = 200 #2 seconds at 100Hz
+    num_segments = len(CACHE_STORAGE_DYNAMIC) // segment_length
+    if num_segments == 0:
+        return 0
+    peaks = []
+    for i in range(num_segments):
+        segment = CACHE_STORAGE_DYNAMIC[i * segment_length:(i + 1) * segment_length]
+        peaks.append(max(segment))
+    return sum(peaks) / len(peaks)
 
 def control_led(signal):
     leds[0].value(signal)

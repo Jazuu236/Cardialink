@@ -12,8 +12,8 @@ import panic
 #GUI Page constants
 CURRENT_PAGE = -1
 PAGE_MAINMENU = 0
-PAGE_MEASURE_PRE = 1
-PAGE_MEASURE = 2
+PAGE_MEASURE_HR = 1
+PAGE_HRV = 2
 
 #Input handler as globals for now, will fix later -Tom 
 #-1 left, 0 no turn, 1 right, this is also a float that decays towards null.
@@ -22,9 +22,6 @@ INPUT_HANDLER_current_position = 0
 INPUT_HANDLER_last_modified_time = time.ticks_ms()
 INPUT_HANDLER_button_has_been_released = True
 
-#Placeholder interrupt variables for pulse measurements
-PULSE_quality= "N/A"
-PULSE_percentage_prepared = 0
 
 # ==========================
 # Settings/components
@@ -53,6 +50,8 @@ LEGAL_HIGH = 40_000
 DELAY_MS = 10
 
 PEAK_WAS_ALREADY_RECORDED = False
+
+FUCKASS_GLOBAL_HRV_MEASUREMENT_STARTED_TS = 0
 
 
 # FIFO
@@ -100,9 +99,12 @@ def gracefully_exit():
 
 def pulse_timer_callback(timer):
     global PEAK_WAS_ALREADY_RECORDED
-    if (CURRENT_PAGE != PAGE_MEASURE_PRE):
-        return
     global measurer
+    if (CURRENT_PAGE != PAGE_MEASURE_HR and CURRENT_PAGE != PAGE_HRV):
+        measurer.clear_cache(measurer.CACHETYPE_DYNAMIC)
+        measurer.clear_cache(measurer.CACHETYPE_200)
+        measurer.clear_cache(measurer.CACHETYPE_BEATS)
+        return
     raw_value = adc.read_u16()  # Read 16-bit ADC value (0–65535)
     if ((raw_value < LEGAL_LOW) or (raw_value > LEGAL_HIGH)):
         return 
@@ -117,9 +119,23 @@ def pulse_timer_callback(timer):
     average_value = measurer.cache_get_average_value(measurer.CACHETYPE_200)
     difference = peak_value - average_value
     if (raw_value >= (average_value + difference * 0.6)):
+        if (not PEAK_WAS_ALREADY_RECORDED):
+            beat = measurer.cBeat(time.ticks_ms())
+            measurer.add_to_beat_cache(beat)
+            PEAK_WAS_ALREADY_RECORDED = True
         measurer.control_led(1)
     else:
+        PEAK_WAS_ALREADY_RECORDED = False
         measurer.control_led(0)
+
+    if (CURRENT_PAGE != PAGE_HRV):
+        #Clear dynamic cache as it's not used in this mode
+        measurer.clear_cache(measurer.CACHETYPE_DYNAMIC)
+    else:
+        measurer.clear_cache(measurer.CACHETYPE_200)
+        measurer.clear_cache(measurer.CACHETYPE_BEATS)
+
+    #If the HRV analysis has been going on for more than 30 seconds, 
 
 encoder_A.irq(trigger=Pin.IRQ_RISING | Pin.IRQ_FALLING, handler=encoder_turn)
 
@@ -132,15 +148,17 @@ def __main__():
     global INPUT_HANDLER_last_modified_time
     global INPUT_HANDLER_button_has_been_released
     global CURRENT_PAGE
-    global PULSE_quality
-    global PULSE_percentage_prepared
+    global FUCKASS_GLOBAL_HRV_MEASUREMENT_STARTED_TS
 
     gui = GUI.cGUI(oled)
     gui.draw_page_init()
     CURRENT_PAGE = PAGE_MAINMENU
     current_selection_index = 0
 
+    i = 0
+
     while True: 
+        i += 1
         call_time_start = time.ticks_ms()
         #Input handling
         if INPUT_HANDLER_current_position >= 1:
@@ -169,14 +187,11 @@ def __main__():
         if CURRENT_PAGE == PAGE_MAINMENU:
             gui.draw_main_menu(current_selection_index, abs(INPUT_HANDLER_current_position), INPUT_HANDLER_last_modified_time)
 
-        elif CURRENT_PAGE == PAGE_MEASURE_PRE: 
-            ready_to_measure = gui.draw_measure_pre(PULSE_quality, PULSE_percentage_prepared)
-            if (ready_to_measure):
-                CURRENT_PAGE = PAGE_MEASURE
+        elif CURRENT_PAGE == PAGE_MEASURE_HR: 
+            gui.draw_measure_hr()
 
-        elif CURRENT_PAGE == PAGE_MEASURE:
-            gui.draw_measure(60)
-            print("Time to draw measure page: " + str(time.ticks_diff(time.ticks_ms(), call_time_start)) + " ms")
+        elif CURRENT_PAGE == PAGE_HRV:
+            gui.draw_measure_hrv(FUCKASS_GLOBAL_HRV_MEASUREMENT_STARTED_TS)
 
 
         #----------------------------------------
@@ -186,14 +201,32 @@ def __main__():
 
         #If button pressed, select current option
         if button.value() == 0 and INPUT_HANDLER_button_has_been_released:
-            INPUT_HANDLER_button_has_been_released = False
-            if current_selection_index == 0:
-                #Measure HR selected
-                CURRENT_PAGE = PAGE_MEASURE_PRE
-            elif current_selection_index == 4:
-                #Settings (EXIT) selected
-                gracefully_exit()
-                break
+            #MAINMENU
+            if CURRENT_PAGE == PAGE_MAINMENU:
+                INPUT_HANDLER_button_has_been_released = False
+                if current_selection_index == 0:
+                    #Measure HR selected
+                    CURRENT_PAGE = PAGE_MEASURE_HR
+                elif current_selection_index == 1:
+                    #Basic HRV selected
+                    FUCKASS_GLOBAL_HRV_MEASUREMENT_STARTED_TS = time.ticks_ms()
+                    CURRENT_PAGE = PAGE_HRV
+                elif current_selection_index == 4:
+                    #Settings (EXIT) selected
+                    gracefully_exit()
+                    break
+                
+            #If we are in measure HR page, go back to main menu
+            elif CURRENT_PAGE == PAGE_MEASURE_HR:
+                INPUT_HANDLER_button_has_been_released = False
+                CURRENT_PAGE = PAGE_MAINMENU
+
+        #Get the memory usage and print it
+        if (i % 10) == 0:
+            i = 0
+            #Get the memory without 
+            mem_usage = len(measurer.CACHE_STORAGE_200) + len(measurer.CACHE_STORAGE_DYNAMIC) + len(measurer.CACHE_STORAGE_BEATS)
+            print("Caches: " + str(mem_usage))
     
     
 if __name__ == "__main__":

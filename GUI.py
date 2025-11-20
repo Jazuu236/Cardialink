@@ -1,6 +1,8 @@
 import time
 import measurer
 import panic
+import peak_processing
+import HRV
 
 heartbeat_first_met_all_criteria_timestamp = 0
 
@@ -49,65 +51,53 @@ class cGUI:
             line_width, 1)
         self.oled.show()
 
-    def draw_measure_pre(self, quality, percentage_prepared):
+    def draw_measure_hr(self):
         self.oled.fill(0)
         #Display current read
-        if len(measurer.CACHE_STORAGE_200) == 0:
+        if len(measurer.CACHE_STORAGE_BEATS) == 0:
             self.oled.text("Read: N/A", 0, 0)
-        else:
-            self.oled.text("Read: " + str(measurer.CACHE_STORAGE_200[-1]), 0, 0)
-        peak_value = measurer.cache_get_peak_value(measurer.CACHETYPE_200)
-        if peak_value == 0:
-            self.oled.text("Peak: N/A", 0, 10)
-        else:
-            rate_ratio = measurer.CACHE_STORAGE_200[-1] / peak_value
-            self.oled.text("Peak: " + "{0:.2f}x".format(rate_ratio), 0, 10)
-        difference = peak_value - measurer.cache_get_average_value(measurer.CACHETYPE_200)
-        self.oled.text("Diff: " + str(int(difference)), 0, 20)
-        if peak_value == 0:
-            self.oled.text("R: N/A", 0, 30)
-        else:
-            dashes_to_display = int((measurer.CACHE_STORAGE_200[-1] - measurer.cache_get_average_value(measurer.CACHETYPE_200)) / (difference * 0.1))
-            self.oled.text("R: " + ("-" * dashes_to_display), 0, 30)
+            self.oled.show()
+            return False
+        #Get the amount of peaks in the last 10 seconds, also get the dynamic cache length, and if it's less than 1000, calculate using the partial data
+        num_beats = measurer.get_beat_cache_length()
+        time_since_first_beat = measurer.CACHE_STORAGE_BEATS[0].age() if num_beats > 0 else 0
 
+        #Calculate BPM using the time since first beat and number of beats
+        if not time_since_first_beat > 0:
+            self.oled.text("BPM: N/A", 0, 50)
+            self.oled.show()
+            return False
         
+        bpm = (num_beats * 60000) / time_since_first_beat
+        self.oled.text("BPM: " + "{0:.1f}".format(bpm), 0, 50)
+
         self.oled.show()
         return False
 
 
     #ChatGPT paskaa, pitää rewrite myöhemmi
-    def draw_measure(self, heart_rate):
-        graph_height = self.oled.height - 10
-        baseline = 10
+    def draw_measure_hrv(self, start_ts):
+        self.oled.fill(0)
 
-        window = measurer.DYNAMIC_CACHE[-5:]
-        if len(window) < 2:
-            return  # Need at least 2 points to draw lines
+        time_remaining = 30000 - time.ticks_diff(time.ticks_ms(), start_ts)
 
-        # Determine vertical scaling
-        min_val = min(window)
-        max_val = max(window)
-        rng = max(max_val - min_val, 1)
+        self.oled.text("Measuring HRV...", 0, 0)
+        self.oled.text("Please wait " + str(max(time_remaining // 1000, 0)) + "s", 0, 10)
 
-        # Clear graph area
-        for x in range(self.oled.width):
-            for y in range(baseline, baseline + graph_height):
-                self.oled.pixel(x, y, 0)
+        if (time_remaining < 0):
+            self.oled.fill(0)
+            #Run HRV analysis
 
-        # Map window values into (x,y) positions
-        points = []
-        step = self.oled.width // (len(window) - 1)
+            hrv_results = HRV.hrv_analysis(measurer.CACHE_STORAGE_DYNAMIC)
+            #Display everything
+            self.oled.text("HRV Results:", 0, 0)
+            self.oled.text("Mean PPI: " + str(hrv_results["mean_ppi"]) + "ms", 0, 10)
+            self.oled.text("Mean HR: " + str(hrv_results["mean_hr"]) + "bpm", 0, 20)
+            self.oled.text("SDNN: " + str(hrv_results["sdnn"]) + "ms", 0, 30)
+            self.oled.text("RMSSD: " + str(hrv_results["rmssd"]) + "ms", 0, 40)
 
-        for i, val in enumerate(window):
-            x = i * step
-            y = baseline + graph_height - ((val - min_val) * graph_height // rng)
-            points.append((x, y))
 
-        # Draw lines between each pair of points
-        for i in range(len(points) - 1):
-            x1, y1 = points[i]
-            x2, y2 = points[i + 1]
-            self.oled.line(x1, y1, x2, y2, 1)
+
 
         # Refresh display
         self.oled.show()
