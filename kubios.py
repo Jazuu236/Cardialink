@@ -20,7 +20,7 @@ def mqtt_callback(topic, msg):
         SDNN = analysis.get("sdnn_ms")
         SNS = analysis.get("sns_index")
         PNS = analysis.get("pns_index")
-        Stress_index = analysis.get("stress_index")
+        stress_index = analysis.get("stress_index")
 
         print("Mean HR:", mean_hr)
         print("Mean PPI:", mean_ppi)
@@ -28,7 +28,7 @@ def mqtt_callback(topic, msg):
         print("SDNN:", SDNN)
         print("SNS:", SNS)
         print("PNS:", PNS)
-        print("Stress Index:", stress_index)
+        print("stress Index:", stress_index)
 
     except Exception as e:
         print("JSON parse error:", e)

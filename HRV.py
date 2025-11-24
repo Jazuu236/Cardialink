@@ -21,6 +21,6 @@ def hrv_analysis(ppi_data):
         "RMSSD": rmssd
     }
 # TEST DATA
-peak_to_peak_interval = [828, 836, 852, 760, 800, 796, 856, 824, 808, 776, 724, 816, 800, 812, 812, 812, 756, 820, 812, 800]
+peak_to_peak_interval = []
 
 print(hrv_analysis(peak_to_peak_interval))
