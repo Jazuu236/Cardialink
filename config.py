@@ -12,7 +12,6 @@ print(wlan_mac.hex().upper())
 SSID = "KME759_Group_1"
 PASSWORD = "!Paska123!"
 BROKER_IP = "192.168.1.253"
-BROKER_WEBHOST = "group1pi.asuscomm.com:21883"
 BROKER_PORT = 21883
 MAC = wlan_mac.hex().upper()
 

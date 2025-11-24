@@ -27,13 +27,13 @@ class cGUI:
         else:
             self.oled.text("   Basic HRV", 0, 10)
         if (current_selection == 2):
-            self.oled.text("-> History", 0, 20)
+            self.oled.text("-> Kubios", 0, 20)
         else:
-            self.oled.text("   History", 0, 20)
+            self.oled.text("   Kubios", 0, 20)
         if (current_selection == 3):
-            self.oled.text("-> Kubios", 0, 30)
+            self.oled.text("-> History", 0, 30)
         else:
-            self.oled.text("   Kubios", 0, 30)
+            self.oled.text("   History", 0, 30)
         if (current_selection == 4):
             self.oled.text("-> Settings EXIT", 0, 40)
         else:
