@@ -6,7 +6,6 @@ from umqtt.simple import MQTTClient
 wlan_sta = network.WLAN(network.STA_IF)
 wlan_sta.active(True)
 wlan_mac = wlan_sta.config('mac')
-print(wlan_mac.hex().upper())
 
 #Network config
 SSID = "KME759_Group_1"
@@ -24,7 +23,7 @@ def connect_wlan():
         print("Connecting to WiFi...")
         sleep(1)
 
-    print("WiFi connected. Pico IP:", wlan.ifconfig()[0])
+    print("WiFi connected!")
     return wlan
 
 #Callback function for received MQTT messages
@@ -39,5 +38,5 @@ def connect_mqtt():
     client.set_callback(on_message)
     client.connect(clean_session=True)
 
-    print("MQTT connected to {}:{}".format(BROKER_IP, BROKER_PORT))
+    print("Connected to Server!")
     return client

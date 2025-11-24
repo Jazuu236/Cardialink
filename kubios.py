@@ -14,32 +14,33 @@ def mqtt_callback(topic, msg):
         data = ujson.loads(msg.decode())
         analysis = data["data"]["analysis"]
 
+        timestamp = analysis.get("create_timestamp")
         mean_hr = analysis.get("mean_hr_bpm")
         mean_ppi = analysis.get("mean_rr_ms")
         RMSSD = analysis.get("rmssd_ms")
         SDNN = analysis.get("sdnn_ms")
         SNS = analysis.get("sns_index")
         PNS = analysis.get("pns_index")
-        Stress_index = analysis.get("stress_index")
+        stress_index = analysis.get("stress_index")
 
+        print("Time:", timestamp)
         print("Mean HR:", mean_hr)
         print("Mean PPI:", mean_ppi)
         print("RMSSD:", RMSSD)
         print("SDNN:", SDNN)
         print("SNS:", SNS)
         print("PNS:", PNS)
-        print("Stress Index:", stress_index)
-
+        print("stress Index:", stress_index)
+        
     except Exception as e:
         print("JSON parse error:", e)
-
 
 # Subscribe and set callback
 mqtt_client.set_callback(mqtt_callback)
 mqtt_client.subscribe(b"kubios/response")
 
-# Test data you send to Kubios
-peak_to_peak_interval = [828, 836, 852, 760, 800, 796, 856, 824, 808, 776, 724, 816, 800, 812, 812, 812, 756, 820, 812, 800]
+# Data
+peak_to_peak_interval = []
 
 # Build JSON payload
 kubios_payload = (
@@ -62,3 +63,4 @@ while True:
     except Exception as e:
         print("MQTT wait error:", e)
         time.sleep(1)
+

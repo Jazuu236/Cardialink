@@ -7,6 +7,15 @@ import time
 import GUI
 import measurer
 import panic
+import framebuf
+from cardialink_logo_binary import binary_data
+
+def show_logo(oled, width=128, height=64, duration=3):
+    logo = framebuf.FrameBuffer(bytearray(binary_data), width, height, framebuf.MONO_VLSB)
+    oled.fill(0)
+    oled.blit(logo, 0, 0)
+    oled.show()
+    time.sleep(duration) #show logo x seconds
 
 
 #GUI Page constants
@@ -147,6 +156,14 @@ timer.init(freq=100, mode=Timer.PERIODIC, callback=pulse_timer_callback)
 
 
 def __main__():
+   
+    # create OLED-object
+    i2c = I2C(1, scl=Pin(15), sda=Pin(14), freq=400000)
+    oled = SSD1306_I2C(128, 64, i2c)
+   
+    # Show logo before GUI
+    show_logo(oled)
+
     global INPUT_HANDLER_current_position
     global INPUT_HANDLER_last_modified_time
     global INPUT_HANDLER_button_has_been_released
