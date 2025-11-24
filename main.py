@@ -14,6 +14,7 @@ CURRENT_PAGE = -1
 PAGE_MAINMENU = 0
 PAGE_MEASURE_HR = 1
 PAGE_HRV = 2
+PAGE_HRV_SHOW_RESULTS = 3
 
 #Input handler as globals for now, will fix later -Tom 
 #-1 left, 0 no turn, 1 right, this is also a float that decays towards null.
@@ -100,19 +101,24 @@ def gracefully_exit():
 def pulse_timer_callback(timer):
     global PEAK_WAS_ALREADY_RECORDED
     global measurer
-    if (CURRENT_PAGE != PAGE_MEASURE_HR and CURRENT_PAGE != PAGE_HRV):
+    if (CURRENT_PAGE != PAGE_MEASURE_HR and CURRENT_PAGE != PAGE_HRV and CURRENT_PAGE != PAGE_HRV_SHOW_RESULTS):
         measurer.clear_cache(measurer.CACHETYPE_DYNAMIC)
         measurer.clear_cache(measurer.CACHETYPE_200)
         measurer.clear_cache(measurer.CACHETYPE_BEATS)
         return
-    raw_value = adc.read_u16()  # Read 16-bit ADC value (0–65535)
+    raw_value = adc.read_u16()  # 0–65535)
     if ((raw_value < LEGAL_LOW) or (raw_value > LEGAL_HIGH)):
         return 
+    #print(str(raw_value) + ", ")
     #Update both caches
+
+    #If we are in view result mode, we do not need to do anything else
+    if (CURRENT_PAGE == PAGE_HRV_SHOW_RESULTS):
+        return
+
     measurer.cache_update(measurer.CACHETYPE_200, raw_value)
     measurer.cache_update(measurer.CACHETYPE_DYNAMIC, raw_value)
 
-    #Get the peak out of 200
     peak_value = measurer.cache_get_peak_value(measurer.CACHETYPE_200)
     if (peak_value == 0):
         return
@@ -128,14 +134,11 @@ def pulse_timer_callback(timer):
         PEAK_WAS_ALREADY_RECORDED = False
         measurer.control_led(0)
 
-    if (CURRENT_PAGE != PAGE_HRV):
+    if (CURRENT_PAGE != PAGE_HRV and CURRENT_PAGE != PAGE_HRV_SHOW_RESULTS):
         #Clear dynamic cache as it's not used in this mode
         measurer.clear_cache(measurer.CACHETYPE_DYNAMIC)
     else:
-        measurer.clear_cache(measurer.CACHETYPE_200)
         measurer.clear_cache(measurer.CACHETYPE_BEATS)
-
-    #If the HRV analysis has been going on for more than 30 seconds, 
 
 encoder_A.irq(trigger=Pin.IRQ_RISING | Pin.IRQ_FALLING, handler=encoder_turn)
 
@@ -191,8 +194,13 @@ def __main__():
             gui.draw_measure_hr()
 
         elif CURRENT_PAGE == PAGE_HRV:
-            gui.draw_measure_hrv(FUCKASS_GLOBAL_HRV_MEASUREMENT_STARTED_TS)
+            if FUCKASS_GLOBAL_HRV_MEASUREMENT_STARTED_TS > time.ticks_ms() - 30000:
+                gui.draw_measure_hrv(FUCKASS_GLOBAL_HRV_MEASUREMENT_STARTED_TS)
+            else:
+                CURRENT_PAGE = PAGE_HRV_SHOW_RESULTS
 
+        elif CURRENT_PAGE == PAGE_HRV_SHOW_RESULTS:
+            gui.draw_measure_hrv_show_results()
 
         #----------------------------------------
         #--------------END PAGES-----------------
@@ -226,7 +234,7 @@ def __main__():
             i = 0
             #Get the memory without 
             mem_usage = len(measurer.CACHE_STORAGE_200) + len(measurer.CACHE_STORAGE_DYNAMIC) + len(measurer.CACHE_STORAGE_BEATS)
-            print("Caches: " + str(mem_usage))
+            #print("Caches: " + str(mem_usage))
     
     
 if __name__ == "__main__":

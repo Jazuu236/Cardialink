@@ -26,5 +26,21 @@ def detect_peaks(data, threshold, sampling_interval):
     if in_region:
         timestamp_ms = max_index * sampling_interval
         peaks.append((timestamp_ms, max_val))
+
+    #Filter illegally close intervals (limit 300ms)
+    filtered_peaks = []
+    for i in range(len(peaks)):
+        ts, val = peaks[i]
+        too_close = False
+        for j in range(len(peaks)):
+            if i == j:
+                continue
+            ts2, val2 = peaks[j]
+            if abs(ts - ts2) <= 300 and val2 > val:
+                too_close = True
+                break
+        if not too_close:
+            filtered_peaks.append((ts, val))
     
-    return peaks
+    
+    return filtered_peaks

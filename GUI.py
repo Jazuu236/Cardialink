@@ -79,25 +79,49 @@ class cGUI:
     def draw_measure_hrv(self, start_ts):
         self.oled.fill(0)
 
-        time_remaining = 30000 - time.ticks_diff(time.ticks_ms(), start_ts)
+        time_remaining = 30_000 - time.ticks_diff(time.ticks_ms(), start_ts)
 
         self.oled.text("Measuring HRV...", 0, 0)
         self.oled.text("Please wait " + str(max(time_remaining // 1000, 0)) + "s", 0, 10)
 
         if (time_remaining < 0):
             self.oled.fill(0)
-            #Run HRV analysis
 
-            hrv_results = HRV.hrv_analysis(measurer.CACHE_STORAGE_DYNAMIC)
-            #Display everything
-            self.oled.text("HRV Results:", 0, 0)
-            self.oled.text("Mean PPI: " + str(hrv_results["mean_ppi"]) + "ms", 0, 10)
-            self.oled.text("Mean HR: " + str(hrv_results["mean_hr"]) + "bpm", 0, 20)
-            self.oled.text("SDNN: " + str(hrv_results["sdnn"]) + "ms", 0, 30)
-            self.oled.text("RMSSD: " + str(hrv_results["rmssd"]) + "ms", 0, 40)
+        self.oled.show()
 
 
+    def draw_measure_hrv_show_results(self):
+        self.oled.fill(0)
+        #Calculate the treshold for peak detection
+        if len(measurer.CACHE_STORAGE_DYNAMIC) < 2:
+            self.oled.text("Measurement failed", 0, 0)
+            self.oled.text("Not enough data", 0, 10)
+            self.oled.show()
+            return
+        avg_value = measurer.cache_get_average_value(measurer.CACHETYPE_DYNAMIC)
+        threshold = avg_value + (measurer.cache_get_peak_value(measurer.CACHETYPE_DYNAMIC) - avg_value) * 0.6
+        #Run PPI processing
+        detected_peaks = peak_processing.detect_peaks(measurer.CACHE_STORAGE_DYNAMIC, threshold, 10)
+        for timestamp, value in detected_peaks:
+            pass
+        ppi = []
+        for i in range(1, len(detected_peaks)):
+            ppi.append(detected_peaks[i][0] - detected_peaks[i-1][0])
+            
+        
+        if (len(ppi) < 10):
+            self.oled.text("Measurement failed", 0, 0)
+            self.oled.text("NOP PPI data", 0, 10)
+            self.oled.show()
+            return
 
+        hrv_results = HRV.hrv_analysis(ppi)
+        #Display everything
+        self.oled.text("HRV Results:", 0, 0)
+        self.oled.text("Mean PPI: " + str(hrv_results["Mean_PPI"]) + "ms", 0, 10)
+        self.oled.text("Mean HR: " + str(hrv_results["Mean_HR"]) + "bpm", 0, 20)
+        self.oled.text("SDNN: " + str(hrv_results["SDNN"]) + "ms", 0, 30)
+        self.oled.text("RMSSD: " + str(hrv_results["RMSSD"]) + "ms", 0, 40)
 
         # Refresh display
         self.oled.show()
