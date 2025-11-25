@@ -9,11 +9,10 @@ import time
 import GUI
 import measurer
 import panic
-import framebuff
-from cardialink_logo_binary import binary_data
+import framebuf
 
 def show_logo(oled, width=128, height=64, duration=3):
-    logo = framebuff.FrameBuffer(bytearray(binary_data), widht, height, framebuff.MONO_VLSB
+    logo = framebuf.FrameBuffer(bytearray(binary_data), width, height, framebuf.MONO_VLSB)
     oled.fill(0)
     oled.blit(logo, 0, 0)
     oled.show()
@@ -250,3 +249,4 @@ def __main__():
     
 if __name__ == "__main__":
     __main__()
+
