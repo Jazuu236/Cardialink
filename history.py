@@ -5,8 +5,10 @@ MAX_HISTORY = 5
 HISTORY_DIR = "kubios_history"
 
 # Create directory if it dosen't exist
-if HISTORY_DIR not in os.listdir():
+try:
     os.mkdir(HISTORY_DIR)
+except OSError:
+    pass
 
 # History files list
 def get_history_files():
@@ -16,26 +18,23 @@ def get_history_files():
     return files
 
 # Saving history to file
-def save_to_history_file(data):
-    t = time.localtime()
+def save_to_history_file(data, tz_offset=2):
+    t = time.localtime(time.time() + tz_offset * 3600)
     filename = "kubios_{:04d}-{:02d}-{:02d}_{:02d}-{:02d}-{:02d}.txt".format(t[0], t[1], t[2], t[3], t[4], t[5])
     filepath = HISTORY_DIR + "/" + filename
     display_time = "{:02d}:{:02d}:{:02d} {:02d}.{:02d}.{:04d}".format(t[3], t[4], t[5], t[2], t[1], t[0])
+    try:
+        with open(filepath, "w") as f:
+            f.write("Date: {}\n\n".format(display_time))
+            f.write("Mean HR: {:.0f}\n".format(data.get("mean_hr_bpm", 0)))
+            f.write("Mean PPI: {:.0f}\n".format(data.get("mean_rr_ms", 0)))
+            f.write("RMSSD: {:.0f}\n".format(data.get("rmssd_ms", 0)))
+            f.write("SDNN: {:.0f}\n".format(data.get("sdnn_ms", 0)))
+            f.write("SNS: {:.2f}\n".format(data.get("sns_index", 0)))
+            f.write("PNS: {:.2f}\n".format(data.get("pns_index", 0)))
 
-    with open(filepath, "w") as f:
-        f.write("Created: {}\n\n".format(display_time))
-        f.write("Mean HR: {}\n".format(data.get("mean_hr_bpm")))
-        f.write("Mean PPI: {}\n".format(data.get("mean_rr_ms")))
-        f.write("RMSSD: {}\n".format(data.get("rmssd_ms")))
-        f.write("SDNN: {}\n".format(data.get("sdnn_ms")))
-        f.write("SNS: {}\n".format(data.get("sns_index")))
-        f.write("PNS: {}\n".format(data.get("pns_index")))
-
-# Deleting old files over the file limit
-files = get_history_files()
-if len(files) > MAX_HISTORY:
-    for old_file in files[:-MAX_HISTORY]:
-        os.remove(old_file)
+    except OSError as e:
+        print("Failed to save history file:", e)
 
 # History list
 def list_history_files():
@@ -48,7 +47,26 @@ def list_history_files():
 def print_history_file(index):
     files = get_history_files()
     if 0 <= index < len(files):
-        with open(files[index], "r") as f:
-            print(f.read())
+        try:
+            with open(files[index], "r") as f:
+                print(f.read())
+        except OSError as e:
+            print("Failed to read history file:", e)
     else:
         print("Not valid option!")
+        
+# Look for all history files
+files = get_history_files()
+
+if files:
+    latest = files[-1]
+    print(latest)
+    try:
+        with open(latest, "r") as f:
+            print("======== Analysis ========")
+            print(f.read())
+            print("=========================")
+    except OSError as e:
+        print("File reading failed:", e)
+else:
+    print("There are no files in history.")

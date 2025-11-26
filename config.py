@@ -1,6 +1,9 @@
 import network
 from time import sleep
+from machine import RTC
 from umqtt.simple import MQTTClient
+import ntptime
+import time
 
 #Finds the Pico's MAC 
 wlan_sta = network.WLAN(network.STA_IF)
@@ -22,21 +25,18 @@ def connect_wlan():
     while not wlan.isconnected():
         print("Connecting to WiFi...")
         sleep(1)
-
     print("WiFi connected!")
     return wlan
 
-#Callback function for received MQTT messages
-def on_message(topic, msg):
-    print("Received MQTT message:")
-    print("  Topic :", topic)
-    print("  Msg   :", msg)
 
 #Connects to the MQTT broker
 def connect_mqtt():
-    client = MQTTClient(client_id=b"", server=BROKER_IP, port=BROKER_PORT)
-    client.set_callback(on_message)
-    client.connect(clean_session=True)
-
-    print("Connected to Server!")
-    return client
+    try:
+        client = MQTTClient(client_id=MAC.encode(), server=BROKER_IP, port=BROKER_PORT)
+        client.set_callback(lambda t, m: print("Received message:", t, m))
+        client.connect(clean_session=True)
+        print("Connected to Server")
+        return client
+    except Exception as e:
+        print("Server connection failed:", e)
+        return None
