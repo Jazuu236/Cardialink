@@ -124,3 +124,15 @@ def dynamic_cache_get_average_peak_value():
 
 def control_led(signal):
     leds[0].value(signal)
+
+def ppi_filter_abnormalities(ppi_data, max_deviation_percentage):
+    if len(ppi_data) < 2:
+        return ppi_data
+    average_ppi = sum(ppi_data) / len(ppi_data)
+    filtered_ppi = []
+    for ppi in ppi_data:
+        deviation = abs(ppi - average_ppi) / average_ppi * 100
+        if deviation <= max_deviation_percentage:
+            filtered_ppi.append(ppi)
+
+    return filtered_ppi

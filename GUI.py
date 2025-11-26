@@ -75,7 +75,6 @@ class cGUI:
         return False
 
 
-    #ChatGPT paskaa, pitää rewrite myöhemmi
     def draw_measure_hrv(self, start_ts):
         self.oled.fill(0)
 
@@ -99,23 +98,20 @@ class cGUI:
             self.oled.show()
             return
         avg_value = measurer.cache_get_average_value(measurer.CACHETYPE_DYNAMIC)
-        threshold = avg_value + (measurer.cache_get_peak_value(measurer.CACHETYPE_DYNAMIC) - avg_value) * 0.6
+        threshold = avg_value + (measurer.dynamic_cache_get_average_peak_value() - avg_value) * 0.6
+
+
         #Run PPI processing
         detected_peaks = peak_processing.detect_peaks(measurer.CACHE_STORAGE_DYNAMIC, threshold, 10)
-        for timestamp, value in detected_peaks:
-            pass
+
         ppi = []
+
         for i in range(1, len(detected_peaks)):
             ppi.append(detected_peaks[i][0] - detected_peaks[i-1][0])
-            
         
-        if (len(ppi) < 10):
-            self.oled.text("Measurement failed", 0, 0)
-            self.oled.text("NOP PPI data", 0, 10)
-            self.oled.show()
-            return
+        filtered_ppi = measurer.ppi_filter_abnormalities(ppi, 33) #Filter all abnormalities greater than 33% deviation (pos <-> neg)
 
-        hrv_results = HRV.hrv_analysis(ppi)
+        hrv_results = HRV.hrv_analysis(filtered_ppi)
         #Display everything
         self.oled.text("HRV Results:", 0, 0)
         self.oled.text("Mean PPI: " + str(hrv_results["Mean_PPI"]) + "ms", 0, 10)
