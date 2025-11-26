@@ -4,7 +4,6 @@ import panic
 import peak_processing
 import HRV
 
-heartbeat_first_met_all_criteria_timestamp = 0
 
 class cGUI:
     def __init__(self, oled):
@@ -52,24 +51,72 @@ class cGUI:
         self.oled.show()
 
     def draw_measure_hr(self):
-        self.oled.fill(0)
         #Display current read
         if len(measurer.CACHE_STORAGE_BEATS) == 0:
+            self.oled.fill(0)
             self.oled.text("Read: N/A", 0, 0)
             self.oled.show()
             return False
-        #Get the amount of peaks in the last 10 seconds, also get the dynamic cache length, and if it's less than 1000, calculate using the partial data
         num_beats = measurer.get_beat_cache_length()
         time_since_first_beat = measurer.CACHE_STORAGE_BEATS[0].age() if num_beats > 0 else 0
 
-        #Calculate BPM using the time since first beat and number of beats
         if not time_since_first_beat > 0:
+            self.oled.fill(0)
             self.oled.text("BPM: N/A", 0, 50)
             self.oled.show()
             return False
         
-        bpm = (num_beats * 60000) / time_since_first_beat
-        self.oled.text("BPM: " + "{0:.1f}".format(bpm), 0, 50)
+        #Clear the top 10 pixels
+        self.oled.fill_rect(0, 0, self.oled.width, 10, 0)
+
+        if not hasattr(self, "already_cleared"):
+            self.already_cleared = True
+            self.oled.fill(0)
+            self.oled.text("Preparing...", 0, 0)
+            self.oled.show()
+            return False
+        
+        if not hasattr(self, "time_started"):
+            self.time_started = time.ticks_ms()
+
+        if (self.time_started + 5000) > time.ticks_ms():
+            dots = ((time.ticks_ms() // 500) % 4)
+            self.oled.text("BPM: " + dots * ".", 0, 0)
+            self.oled.show()
+        else:
+            bpm = (num_beats * 60000) / time_since_first_beat
+            self.oled.text("BPM: " + "{0:.1f}".format(bpm), 0, 0)
+
+
+        graph_width = self.oled.width
+        graph_height = 50
+
+        self.oled.fill_rect(0, 10, graph_width, graph_height, 0)
+
+        if len(measurer.CACHE_STORAGE_200) < 2:
+            self.oled.text("Graph: N/A", 0, 10)
+            self.oled.show()
+            return False
+
+        max_value = max(measurer.CACHE_STORAGE_200)
+        min_value = min(measurer.CACHE_STORAGE_200)
+        value_range = max_value - min_value
+
+        if value_range == 0:
+            self.oled.text("Graph: N/A (2)", 0, 10)
+            self.oled.show()
+            return False
+
+        for i in range(len(measurer.CACHE_STORAGE_200) - 1):
+            val1 = measurer.CACHE_STORAGE_200[i]
+            val2 = measurer.CACHE_STORAGE_200[i + 1]
+            y1 = 10 + graph_height - int(((val1 - min_value) / value_range) * graph_height)
+            y2 = 10 + graph_height - int(((val2 - min_value) / value_range) * graph_height)
+            x1 = (i * graph_width) // len(measurer.CACHE_STORAGE_200)
+            x2 = ((i + 1) * graph_width) // len(measurer.CACHE_STORAGE_200)
+            self.oled.line(x1, y1, x2, y2, 1)
+
+
 
         self.oled.show()
         return False

@@ -24,6 +24,17 @@ def add_to_beat_cache(beat):
     global CACHE_STORAGE_BEATS
     CACHE_STORAGE_BEATS.append(beat)
     CACHE_STORAGE_BEATS = [b for b in CACHE_STORAGE_BEATS if b.age() <= 30000]
+    #Loop thru the entire beat cache, and if the difference between 2 beats is less than 300 ms, or greater than 2000ms, clear the beat cache
+    for i in range(1, len(CACHE_STORAGE_BEATS)):
+        ppi = CACHE_STORAGE_BEATS[i].age() - CACHE_STORAGE_BEATS[i-1].age()
+        if -(ppi) < 300 :
+            #Remove the earlier beat
+            CACHE_STORAGE_BEATS.pop(i-1)
+        elif -(ppi) > 2000 :
+            #Clear the entire cache
+            CACHE_STORAGE_BEATS = []
+            break
+
 
 
 def get_beat_cache_length():
@@ -136,3 +147,21 @@ def ppi_filter_abnormalities(ppi_data, max_deviation_percentage):
             filtered_ppi.append(ppi)
 
     return filtered_ppi
+
+def clear_cache_with_limit(cache_type, limit):
+    global CACHE_STORAGE_BEATS
+    if cache_type == CACHETYPE_BEATS:
+        while len(CACHE_STORAGE_BEATS) > limit:
+            CACHE_STORAGE_BEATS.pop(0)
+    
+    global CACHE_STORAGE_200
+    if cache_type == CACHETYPE_200:
+        while len(CACHE_STORAGE_200) > limit:
+            CACHE_STORAGE_200.pop(0)
+    
+    global CACHE_STORAGE_DYNAMIC
+    if cache_type == CACHETYPE_DYNAMIC:
+        while len(CACHE_STORAGE_DYNAMIC) > limit:
+            CACHE_STORAGE_DYNAMIC.pop(0)
+    
+    return

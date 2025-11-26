@@ -90,10 +90,10 @@ def encoder_turn(pin):
 
     if encoder_B.value() != encoder_A.value():
         if (INPUT_HANDLER_current_position < 1):
-            INPUT_HANDLER_current_position += 0.35
+            INPUT_HANDLER_current_position += 0.9 + abs(INPUT_HANDLER_current_position) * 0.0
     else:
         if (INPUT_HANDLER_current_position > -1):
-            INPUT_HANDLER_current_position -= 0.35
+            INPUT_HANDLER_current_position -= 0.9 + abs(INPUT_HANDLER_current_position) * 0.0
         
 
 def gracefully_exit():
@@ -252,6 +252,11 @@ def __main__():
             elif CURRENT_PAGE == PAGE_MEASURE_HR:
                 INPUT_HANDLER_button_has_been_released = False
                 CURRENT_PAGE = PAGE_MAINMENU
+                #Reset the time started for measure HR
+                if hasattr(gui, "time_started"):
+                    del gui.time_started
+                if hasattr(gui, "already_cleared"):
+                    del gui.already_cleared
 
         #Get the memory usage and print it
         if (i % 10) == 0:
