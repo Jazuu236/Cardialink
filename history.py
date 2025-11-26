@@ -54,19 +54,3 @@ def print_history_file(index):
             print("Failed to read history file:", e)
     else:
         print("Not valid option!")
-        
-# Look for all history files
-files = get_history_files()
-
-if files:
-    latest = files[-1]
-    print(latest)
-    try:
-        with open(latest, "r") as f:
-            print("======== Analysis ========")
-            print(f.read())
-            print("=========================")
-    except OSError as e:
-        print("File reading failed:", e)
-else:
-    print("There are no files in history.")
