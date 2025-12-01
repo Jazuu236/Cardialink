@@ -1,7 +1,6 @@
 # HRV analysis from Peak to Peak Interval(PPI)
 import panic
 
-
 def hrv_analysis(ppi_data):
 
     #Prevent division by zero

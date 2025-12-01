@@ -1,6 +1,5 @@
 binary_data = bytes([0x00])
 
-
 import sys
 from piotimer import Piotimer
 from ssd1306 import SSD1306_I2C
@@ -22,10 +21,14 @@ def show_logo(oled, width=128, height=64, duration=0):
 
 #GUI Page constants
 CURRENT_PAGE = -1
+TARGET_PAGE = -1 #
 PAGE_MAINMENU = 0
 PAGE_MEASURE_HR = 1
 PAGE_HRV = 2
 PAGE_HRV_SHOW_RESULTS = 3
+PAGE_KUBIOS = 4
+PAGE_KUBIOS_SHOW_RESULTS = 5
+PAGE_READY_TO_START = 10
 
 #Input handler as globals for now, will fix later -Tom 
 #-1 left, 0 no turn, 1 right, this is also a float that decays towards null.
@@ -112,7 +115,10 @@ def gracefully_exit():
 def pulse_timer_callback(timer):
     global PEAK_WAS_ALREADY_RECORDED
     global measurer
-    if (CURRENT_PAGE != PAGE_MEASURE_HR and CURRENT_PAGE != PAGE_HRV and CURRENT_PAGE != PAGE_HRV_SHOW_RESULTS):
+    
+    measuring_pages = [PAGE_MEASURE_HR, PAGE_HRV, PAGE_HRV_SHOW_RESULTS, PAGE_KUBIOS, PAGE_KUBIOS_SHOW_RESULTS]
+    
+    if (CURRENT_PAGE not in measuring_pages):
         measurer.clear_cache(measurer.CACHETYPE_DYNAMIC)
         measurer.clear_cache(measurer.CACHETYPE_200)
         measurer.clear_cache(measurer.CACHETYPE_BEATS)
@@ -122,7 +128,7 @@ def pulse_timer_callback(timer):
         return 
     
     #If we are in view result mode, we do not need to do anything else
-    if (CURRENT_PAGE == PAGE_HRV_SHOW_RESULTS):
+    if (CURRENT_PAGE == PAGE_HRV_SHOW_RESULTS or CURRENT_PAGE == PAGE_KUBIOS_SHOW_RESULTS):
         return
 
     #Update both caches
@@ -147,8 +153,7 @@ def pulse_timer_callback(timer):
         PEAK_WAS_ALREADY_RECORDED = False
         measurer.control_led(0)
 
-    if (CURRENT_PAGE != PAGE_HRV and CURRENT_PAGE != PAGE_HRV_SHOW_RESULTS):
-        #Clear dynamic cache as it's not used in this mode
+    if (CURRENT_PAGE != PAGE_HRV and CURRENT_PAGE != PAGE_HRV_SHOW_RESULTS and CURRENT_PAGE != PAGE_KUBIOS and CURRENT_PAGE != PAGE_KUBIOS_SHOW_RESULTS):
         measurer.clear_cache(measurer.CACHETYPE_DYNAMIC)
     else:
         measurer.clear_cache(measurer.CACHETYPE_BEATS)
@@ -162,11 +167,11 @@ timer.init(freq=100, mode=Timer.PERIODIC, callback=pulse_timer_callback)
 
 
 def __main__():
-   
+    
     # create OLED-object
     i2c = I2C(1, scl=Pin(15), sda=Pin(14), freq=400000)
     oled = SSD1306_I2C(128, 64, i2c)
-   
+    
     # Show logo before GUI
     #show_logo(oled)
 
@@ -175,6 +180,7 @@ def __main__():
     global INPUT_HANDLER_last_modified_time
     global INPUT_HANDLER_button_has_been_released
     global CURRENT_PAGE
+    global TARGET_PAGE
     global FUCKASS_GLOBAL_HRV_MEASUREMENT_STARTED_TS
 
     gui = GUI.cGUI(oled)
@@ -190,13 +196,13 @@ def __main__():
         #Input handling
         if INPUT_HANDLER_current_position >= 1:
             current_selection_index += 1
-            if current_selection_index > 5:
+            if current_selection_index > 4:
                 current_selection_index = 0
             INPUT_HANDLER_current_position = 0
         elif INPUT_HANDLER_current_position <= -1:
             current_selection_index -= 1
             if current_selection_index < 0:
-                current_selection_index = 5
+                current_selection_index = 4
             INPUT_HANDLER_current_position = 0
 
         if not INPUT_HANDLER_button_has_been_released and button.value() == 1:
@@ -213,6 +219,9 @@ def __main__():
 
         if CURRENT_PAGE == PAGE_MAINMENU:
             gui.draw_main_menu(current_selection_index, abs(INPUT_HANDLER_current_position), INPUT_HANDLER_last_modified_time)
+        
+        elif CURRENT_PAGE == PAGE_READY_TO_START:
+            gui.draw_ready_to_start()
 
         elif CURRENT_PAGE == PAGE_MEASURE_HR: 
             gui.draw_measure_hr()
@@ -225,6 +234,15 @@ def __main__():
 
         elif CURRENT_PAGE == PAGE_HRV_SHOW_RESULTS:
             gui.draw_measure_hrv_show_results()
+            
+        elif CURRENT_PAGE == PAGE_KUBIOS:
+            if FUCKASS_GLOBAL_HRV_MEASUREMENT_STARTED_TS > time.ticks_ms() - 30000:
+                gui.draw_measure_kubios(FUCKASS_GLOBAL_HRV_MEASUREMENT_STARTED_TS)
+            else:
+                CURRENT_PAGE = PAGE_KUBIOS_SHOW_RESULTS
+
+        elif CURRENT_PAGE == PAGE_KUBIOS_SHOW_RESULTS:
+            gui.draw_kubios_show_results()
 
         #----------------------------------------
         #--------------END PAGES-----------------
@@ -236,20 +254,43 @@ def __main__():
             #MAINMENU
             if CURRENT_PAGE == PAGE_MAINMENU:
                 INPUT_HANDLER_button_has_been_released = False
+                
                 if current_selection_index == 0:
-                    #Measure HR selected
-                    CURRENT_PAGE = PAGE_MEASURE_HR
+                    TARGET_PAGE = PAGE_MEASURE_HR
+                    CURRENT_PAGE = PAGE_READY_TO_START
+                    
                 elif current_selection_index == 1:
-                    #Basic HRV selected
-                    FUCKASS_GLOBAL_HRV_MEASUREMENT_STARTED_TS = time.ticks_ms()
-                    CURRENT_PAGE = PAGE_HRV
+                    TARGET_PAGE = PAGE_HRV
+                    CURRENT_PAGE = PAGE_READY_TO_START
+                    
+                elif current_selection_index == 2:
+                    TARGET_PAGE = PAGE_KUBIOS
+                    CURRENT_PAGE = PAGE_READY_TO_START
+                    
                 elif current_selection_index == 4:
-                    #Settings (EXIT) selected
+                    # Settings (EXIT) selected
                     gracefully_exit()
                     break
+
+            # Page: PRESS TO START
+            elif CURRENT_PAGE == PAGE_READY_TO_START:
+                INPUT_HANDLER_button_has_been_released = False
                 
-            #If we are in measure HR page, go back to main menu
-            elif CURRENT_PAGE == PAGE_MEASURE_HR:
+                if TARGET_PAGE == PAGE_MEASURE_HR:
+                    if hasattr(gui, "time_started"):
+                        del gui.time_started
+                    if hasattr(gui, "already_cleared"):
+                        del gui.already_cleared
+                
+                elif TARGET_PAGE == PAGE_HRV or TARGET_PAGE == PAGE_KUBIOS:
+                    FUCKASS_GLOBAL_HRV_MEASUREMENT_STARTED_TS = time.ticks_ms()
+                
+                CURRENT_PAGE = TARGET_PAGE
+                
+            elif (CURRENT_PAGE == PAGE_MEASURE_HR or 
+                  CURRENT_PAGE == PAGE_HRV_SHOW_RESULTS or 
+                  CURRENT_PAGE == PAGE_KUBIOS_SHOW_RESULTS):
+                  
                 INPUT_HANDLER_button_has_been_released = False
                 CURRENT_PAGE = PAGE_MAINMENU
                 #Reset the time started for measure HR
