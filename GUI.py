@@ -57,6 +57,23 @@ class cGUI:
 
         self.oled.show()
 
+    def draw_ready_to_start(self, current_selection):
+        self.oled.fill(0)
+
+        # Confrim menu choice
+        mode_text = "Start"
+        if current_selection == 0:
+            mode_text = "Start HR?"
+        elif current_selection == 1:
+            mode_text = "Start HRV?"
+        elif current_selection == 2:
+            mode_text = "Start Kubios?"
+        
+        x_pos = (128 - (len(mode_text) * 8)) // 2
+        y_pos = 28
+        self.oled.text(mode_text, x_pos, y_pos)
+        self.oled.show()
+
     def draw_measure_hr(self):
         #Display current read
         if len(measurer.CACHE_STORAGE_BEATS) == 0:
@@ -142,6 +159,21 @@ class cGUI:
 
         self.oled.show()
 
+    # Measure Kubios
+    def draw_measure_kubios(self, start_ts):
+        self.oled.fill(0)
+
+        time_remaining = 30_000 - time.ticks_diff(time.ticks_ms(), start_ts)
+
+        self.oled.text("Kubios Analysis", 0, 0)
+        self.oled.text("Measuring...", 0, 10)
+        self.oled.text("Wait: " + str(max(time_remaining // 1000, 0)) + "s", 0, 30)
+
+        if (time_remaining < 0):
+            self.oled.fill(0)
+
+        self.oled.show()
+
 
     def draw_measure_hrv_show_results(self):
         self.oled.fill(0)
@@ -174,4 +206,17 @@ class cGUI:
         self.oled.text("RMSSD: " + str(hrv_results["RMSSD"]) + "ms", 0, 40)
 
         # Refresh display
+        self.oled.show()
+
+    # Kubios
+    def draw_kubios_show_results(self):
+        self.oled.fill(0)
+        
+        if len(measurer.CACHE_STORAGE_DYNAMIC) < 2:
+            self.oled.text("Measurement failed", 0, 0)
+            self.oled.show()
+            return
+            
+        self.oled.text("Kubios Ready", 0, 0)
+        self.oled.text("Analysis Done.", 0, 10)
         self.oled.show()

@@ -1,6 +1,5 @@
 binary_data = bytes([0x00])
 
-
 import sys
 from piotimer import Piotimer
 from ssd1306 import SSD1306_I2C
@@ -23,10 +22,14 @@ def show_logo(oled, width=128, height=64, duration=0):
 
 #GUI Page constants
 CURRENT_PAGE = -1
+TARGET_PAGE = -1 #
 PAGE_MAINMENU = 0
 PAGE_MEASURE_HR = 1
 PAGE_HRV = 2
 PAGE_HRV_SHOW_RESULTS = 3
+PAGE_KUBIOS = 4
+PAGE_KUBIOS_SHOW_RESULTS = 5
+PAGE_READY_TO_START = 10
 
 
 # ==========================
@@ -92,7 +95,7 @@ def pulse_timer_callback(timer, menu, measurer):
         return 
     
     #If we are in view result mode, we do not need to do anything else
-    if (CURRENT_PAGE == PAGE_HRV_SHOW_RESULTS):
+    if (CURRENT_PAGE == PAGE_HRV_SHOW_RESULTS or CURRENT_PAGE == PAGE_KUBIOS_SHOW_RESULTS):
         return
 
     #Update both caches
@@ -115,19 +118,17 @@ def pulse_timer_callback(timer, menu, measurer):
         measurer.PEAK_WAS_ALREADY_RECORDED = False
         measurer.control_led(0)
 
-    if (CURRENT_PAGE != PAGE_HRV and CURRENT_PAGE != PAGE_HRV_SHOW_RESULTS):
-        #Clear dynamic cache as it's not used in this mode
+    if (CURRENT_PAGE != PAGE_HRV and CURRENT_PAGE != PAGE_HRV_SHOW_RESULTS and CURRENT_PAGE != PAGE_KUBIOS and CURRENT_PAGE != PAGE_KUBIOS_SHOW_RESULTS):
         measurer.clear_cache(measurer.CACHETYPE_DYNAMIC)
     else:
         measurer.clear_cache(measurer.CACHETYPE_BEATS)
 
 def __main__():
-   
+    
     # create OLED-object
     i2c = I2C(1, scl=Pin(15), sda=Pin(14), freq=400000)
     oled = SSD1306_I2C(128, 64, i2c)
    
-    # Show logo before GUI
     #show_logo(oled)
 
     #Create menu state object
@@ -153,7 +154,7 @@ def __main__():
         #Input handling
         if menu.input_handler.current_position >= 1:
             current_selection_index += 1
-            if current_selection_index > 5:
+            if current_selection_index > 4:
                 current_selection_index = 0
             menu.input_handler.current_position = 0
         elif menu.input_handler.current_position <= -1:
@@ -173,7 +174,6 @@ def __main__():
         #--------------PAGES-----------------
         #------------------------------------
 
-
         if menu.current_page == PAGE_MAINMENU:
             gui.draw_main_menu(current_selection_index, (menu.input_handler.current_position))
 
@@ -188,6 +188,15 @@ def __main__():
 
         elif menu.current_page == PAGE_HRV_SHOW_RESULTS:
             gui.draw_measure_hrv_show_results()
+            
+        elif CURRENT_PAGE == PAGE_KUBIOS:
+            if FUCKASS_GLOBAL_HRV_MEASUREMENT_STARTED_TS > time.ticks_ms() - 30000:
+                gui.draw_measure_kubios(FUCKASS_GLOBAL_HRV_MEASUREMENT_STARTED_TS)
+            else:
+                CURRENT_PAGE = PAGE_KUBIOS_SHOW_RESULTS
+
+        elif CURRENT_PAGE == PAGE_KUBIOS_SHOW_RESULTS:
+            gui.draw_kubios_show_results()
 
         #----------------------------------------
         #--------------END PAGES-----------------
@@ -207,9 +216,24 @@ def __main__():
                     menu.hrv_measurement_started_ts = time.ticks_ms()
                     menu.current_page = PAGE_HRV
                 elif current_selection_index == 4:
-                    #Settings (EXIT) selected
+                    # Settings (EXIT) selected
                     gracefully_exit()
                     break
+
+            # Page: PRESS TO START
+            elif CURRENT_PAGE == PAGE_READY_TO_START:
+                INPUT_HANDLER_button_has_been_released = False
+                
+                if TARGET_PAGE == PAGE_MEASURE_HR:
+                    if hasattr(gui, "time_started"):
+                        del gui.time_started
+                    if hasattr(gui, "already_cleared"):
+                        del gui.already_cleared
+                
+                elif TARGET_PAGE == PAGE_HRV or TARGET_PAGE == PAGE_KUBIOS:
+                    FUCKASS_GLOBAL_HRV_MEASUREMENT_STARTED_TS = time.ticks_ms()
+                
+                CURRENT_PAGE = TARGET_PAGE
                 
             #If we are in measure HR page, go back to main menu
             elif menu.current_page == PAGE_MEASURE_HR:
