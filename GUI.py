@@ -3,19 +3,33 @@ import panic
 import peak_processing
 import HRV
 
-
 class cGUI:
     def __init__(self, oled):
+        """
+        Initialize the GUI handler with the OLED display object.
+        """
         self.oled = oled
 
     def draw_page_init(self, Measurer):
+        """
+        Draw the initialization screen and turn off the sensor LED.
+        """
         self.oled.fill(0)
         Measurer.control_led(0)
         self.oled.text("Initializing", 0, 0)
         self.oled.show()
 
     def draw_main_menu(self, current_selection, anim_pos):
+        """
+        Render the main menu items and the animated selection arrow.
+        
+        Args:
+            current_selection (int): Index of the selected menu item.
+            anim_pos (float): Position for the animated arrow.
+        """
         self.oled.fill(0)
+        
+        # Draw menu items with selection indicator
         if (current_selection == 0):
             self.oled.text("-> Measure HR", 0, 0)
         else:
@@ -37,7 +51,7 @@ class cGUI:
         else:
             self.oled.text("   Settings EXIT", 0, 40)
 
-
+        # Draw the animated arrow at the bottom
         height = int(abs(-0.25) * (self.oled.height // 2)) 
         center_x = self.oled.width // 2
         base_y = int(self.oled.height - 1)
@@ -56,30 +70,47 @@ class cGUI:
 
         self.oled.show()
 
-    def draw_ready_to_start(self, current_selection):
+    def draw_ready_to_start(self, current_selection, target_page):
+        """
+        Draw the confirmation page before starting a measurement.
+        Allows the user to Start or Go Back.
+        """
         self.oled.fill(0)
 
-        # Confrim menu choice
-        mode_text = "Start"
-        if current_selection == 0:
+        mode_text = "Press to Start"
+        if target_page == 1: 
             mode_text = "Start HR?"
-        elif current_selection == 1:
+        elif target_page == 2:
             mode_text = "Start HRV?"
-        elif current_selection == 2:
+        elif target_page == 4:
             mode_text = "Start Kubios?"
         
+        # Center the title text
         x_pos = (128 - (len(mode_text) * 8)) // 2
-        y_pos = 28
+        y_pos = 10
         self.oled.text(mode_text, x_pos, y_pos)
+        
+        # Show selection options (Start / Back)
+        if current_selection == 0:
+            self.oled.text("-> START", 20, 40)
+            self.oled.text("   BACK", 20, 50)
+        else:
+            self.oled.text("   START", 20, 40)
+            self.oled.text("-> BACK", 20, 50)
+
         self.oled.show()
 
     def draw_measure_hr(self, Measurer):
-        #Display current read
+        """
+        Display the real-time Heart Rate (BPM) and a raw signal graph.
+        """
+        # Display current read
         if len(Measurer.CACHE_STORAGE_BEATS) == 0:
             self.oled.fill(0)
             self.oled.text("Read: N/A", 0, 0)
             self.oled.show()
             return False
+            
         num_beats = Measurer.get_beat_cache_length()
         time_since_first_beat = Measurer.CACHE_STORAGE_BEATS[0].age() if num_beats > 0 else 0
 
@@ -89,7 +120,7 @@ class cGUI:
             self.oled.show()
             return False
         
-        #Clear the top 10 pixels
+        # Clear the top area for text
         self.oled.fill_rect(0, 0, self.oled.width, 10, 0)
 
         if not hasattr(self, "already_cleared"):
@@ -102,6 +133,7 @@ class cGUI:
         if not hasattr(self, "time_started"):
             self.time_started = time.ticks_ms()
 
+        # Show loading dots for the first 5 seconds, then show BPM
         if (self.time_started + 5000) > time.ticks_ms():
             dots = ((time.ticks_ms() // 500) % 4)
             self.oled.text("BPM: " + dots * ".", 0, 0)
@@ -110,7 +142,7 @@ class cGUI:
             bpm = (num_beats * 60000) / time_since_first_beat
             self.oled.text("BPM: " + "{0:.1f}".format(bpm), 0, 0)
 
-
+        # Draw the signal graph
         graph_width = self.oled.width
         graph_height = 50
 
@@ -139,13 +171,14 @@ class cGUI:
             x2 = ((i + 1) * graph_width) // len(Measurer.CACHE_STORAGE_200)
             self.oled.line(x1, y1, x2, y2, 1)
 
-
-
         self.oled.show()
         return False
 
 
     def draw_measure_hrv(self, start_ts):
+        """
+        Show the countdown timer for the HRV measurement process.
+        """
         self.oled.fill(0)
 
         time_remaining = 30_000 - time.ticks_diff(time.ticks_ms(), start_ts)
@@ -158,8 +191,10 @@ class cGUI:
 
         self.oled.show()
 
-    # Measure Kubios
     def draw_measure_kubios(self, start_ts):
+        """
+        Show the countdown timer for the Kubios analysis process.
+        """
         self.oled.fill(0)
 
         time_remaining = 30_000 - time.ticks_diff(time.ticks_ms(), start_ts)
@@ -175,40 +210,46 @@ class cGUI:
 
 
     def draw_measure_hrv_show_results(self, Measurer):
+        """
+        Calculate PPI/HRV metrics from collected data and display the results.
+        """
         self.oled.fill(0)
-        #Calculate the treshold for peak detection
+        
+        # Calculate the threshold for peak detection
         if len(Measurer.CACHE_STORAGE_DYNAMIC) < 2:
             self.oled.text("Measurement failed", 0, 0)
             self.oled.text("Not enough data", 0, 10)
             self.oled.show()
             return
+            
         avg_value = Measurer.cache_get_average_value(Measurer.CACHETYPE_DYNAMIC)
         threshold = avg_value + (Measurer.dynamic_cache_get_average_peak_value() - avg_value) * 0.6
 
-
-        #Run PPI processing
+        # Run PPI (Peak-to-Peak Interval) processing
         detected_peaks = peak_processing.detect_peaks(Measurer.CACHE_STORAGE_DYNAMIC, threshold, 10)
 
         ppi = []
-
         for i in range(1, len(detected_peaks)):
             ppi.append(detected_peaks[i][0] - detected_peaks[i-1][0])
         
-        filtered_ppi = Measurer.ppi_filter_abnormalities(ppi, 33) #Filter all abnormalities greater than 33% deviation (pos <-> neg)
+        # Filter all abnormalities greater than 33% deviation
+        filtered_ppi = Measurer.ppi_filter_abnormalities(ppi, 33) 
 
         hrv_results = HRV.hrv_analysis(filtered_ppi)
-        #Display everything
+        
+        # Display results
         self.oled.text("HRV Results:", 0, 0)
         self.oled.text("Mean PPI: " + str(hrv_results["Mean_PPI"]) + "ms", 0, 10)
         self.oled.text("Mean HR: " + str(hrv_results["Mean_HR"]) + "bpm", 0, 20)
         self.oled.text("SDNN: " + str(hrv_results["SDNN"]) + "ms", 0, 30)
         self.oled.text("RMSSD: " + str(hrv_results["RMSSD"]) + "ms", 0, 40)
 
-        # Refresh display
         self.oled.show()
 
-    # Kubios
     def draw_kubios_show_results(self, Measurer):
+        """
+        Display the completion message for Kubios analysis.
+        """
         self.oled.fill(0)
         
         if len(Measurer.CACHE_STORAGE_DYNAMIC) < 2:
@@ -220,14 +261,88 @@ class cGUI:
         self.oled.text("Analysis Done.", 0, 10)
         self.oled.show()
 
-    def draw_history_file(self, text):
+    def draw_history_list(self, current_selection, history_files):
+        """
+        Render a scrollable list of saved history files with formatted timestamps.
+        """
         self.oled.fill(0)
-        lines = text.split("#")
-        for i, line in enumerate(lines):
-            if i >= 6:
+        self.oled.text("Select File:", 0, 0)
+        
+        display_list = history_files + ["Back"]
+        
+        # Calculate scroll offset
+        start_index = 0
+        if current_selection >= 4:
+            start_index = current_selection - 4
+            
+        # Draw up to 5 items on the screen
+        for i in range(5):
+            item_index = start_index + i
+            if item_index >= len(display_list):
                 break
-            line = line.replace("#", "")
-            line = line.replace("\n", "")
-            self.oled.text(line, 0, i * 10)
+            
+            item = display_list[item_index]
+            y_pos = 10 + (i * 10)
+            
+            if item == "Back":
+                display_text = "Back"
+            else:
+                # Parse filename to display readable date/time
+                filename = item.split("/")[-1]
+                clean_name = filename.replace("kubios_", "").replace(".txt", "")
+                
+                try:
+                    parts = clean_name.split("_") 
+                    if len(parts) >= 2:
+                        date_part = parts[0].split("-") # [YYYY, MM, DD]
+                        time_part = parts[1].split("-") # [HH, MM, SS]
+                        
+                        # Format: HH:MM DD.MM
+                        display_text = "{}:{} {}.{}".format(time_part[0], time_part[1], date_part[2], date_part[1])
+                    else:
+                        display_text = clean_name[:14]
+                except:
+                    display_text = clean_name[:14]
+
+            if item_index == current_selection:
+                self.oled.text("-> " + display_text, 0, y_pos)
+            else:
+                self.oled.text("   " + display_text, 0, y_pos)
+                
         self.oled.show()
 
+    def draw_history_file(self, text, scroll_offset=0):
+        """
+        Display the content of a selected history file with scrolling.
+        """
+        self.oled.fill(0)
+        
+        if not text:
+            self.oled.text("Empty / Error", 0, 0)
+            self.oled.show()
+            return
+
+        # Split text into clean lines first
+        raw_lines = text.split("#")
+        if len(raw_lines) < 2:
+            raw_lines = text.split("\n")
+            
+        lines = []
+        for line in raw_lines:
+            clean_line = line.replace("\n", "").strip()
+            if len(clean_line) > 0:
+                lines.append(clean_line)
+
+        # Draw 6 lines starting from scroll_offset
+        max_lines_on_screen = 6
+        
+        for i in range(max_lines_on_screen):
+            line_index = scroll_offset + i
+            
+            # Stop if we run out of lines
+            if line_index >= len(lines):
+                break
+                
+            self.oled.text(lines[line_index], 0, i * 10)
+            
+        self.oled.show()

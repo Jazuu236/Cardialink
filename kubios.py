@@ -22,6 +22,12 @@ def mqtt_callback(topic, msg):
             print("SNS: {:.2f}".format(analysis.get("sns_index", 0)))
             print("PNS: {:.2f}".format(analysis.get("pns_index", 0)))
             print("Stress Index: {:.2f}".format(analysis.get("stress_index", 0)))
+            print("Physiological age: {:.0f}".format(analysis.get("physiological_age", 0)))
+            print("PNS Index: {:.2f}".format(analysis.get("pns_index", 0)))
+            print("SNS Index: {:.2f}".format(analysis.get("sns_index", 0)))
+            print("Readiness: {:.2f}".format(analysis.get("readiness", 0)))
+            print("SD1: {:.2f}".format(analysis.get("sd1_ms", 0)))
+            print("SD2: {:.2f}".format(analysis.get("sd2_ms", 0)))
 
             # Save to history
             save_to_history_file(analysis)
@@ -59,3 +65,4 @@ while True:
     except Exception as e:
         print("MQTT wait error:", e)
         time.sleep(1)
+

@@ -1,19 +1,19 @@
-binary_data = bytes([0x00])
-
 import sys
 from piotimer import Piotimer
 from ssd1306 import SSD1306_I2C
 from machine import Pin, ADC, I2C, Timer
 from filefifo import Filefifo
+from visual_binary_data import startup_logo
 import time
 import GUI
 import measurer
 import panic
 import framebuf
 import menu_state
+import history
 
 def show_logo(oled, width=128, height=64, duration=0):
-    logo = framebuf.FrameBuffer(bytearray(binary_data), width, height, framebuf.MONO_VLSB)
+    logo = framebuf.FrameBuffer(bytearray(startup_logo), width, height, framebuf.MONO_VLSB)
     oled.fill(0)
     oled.blit(logo, 0, 0)
     oled.show()
@@ -21,13 +21,14 @@ def show_logo(oled, width=128, height=64, duration=0):
 
 
 #GUI Page constants
-TARGET_PAGE = -1 #
 PAGE_MAINMENU = 0
 PAGE_MEASURE_HR = 1
 PAGE_HRV = 2
 PAGE_HRV_SHOW_RESULTS = 3
 PAGE_KUBIOS = 4
 PAGE_KUBIOS_SHOW_RESULTS = 5
+PAGE_HISTORY_LIST = 6
+PAGE_HISTORY_VIEW = 7
 PAGE_READY_TO_START = 10
 
 
@@ -127,9 +128,10 @@ def __main__():
     # create OLED-object
     i2c = I2C(1, scl=Pin(15), sda=Pin(14), freq=400000)
     oled = SSD1306_I2C(128, 64, i2c)
-   
-    #show_logo(oled)
-
+    
+    # Show logo
+    show_logo(oled, duration=2)
+    
     #Create menu state object
     Menu = menu_state.cMenuState()
 
@@ -138,7 +140,6 @@ def __main__():
 
 
     #Setup the interrupts
-
     encoder_A.irq(trigger=Pin.IRQ_RISING | Pin.IRQ_FALLING, handler=lambda pin: encoder_turn(pin, Menu.input_handler))
 
     timer = Timer()
@@ -146,24 +147,45 @@ def __main__():
 
     gui = GUI.cGUI(oled)
     gui.draw_page_init(Measurer)
+
     Menu.current_page = PAGE_MAINMENU
     current_selection_index = 0
+    TARGET_PAGE = -1 
+
+    Menu.history_files = []
+    Menu.selected_history_content = ""
 
     i = 0
 
     while True: 
         i += 1
-        call_time_start = time.ticks_ms()
-        #Input handling
+        
+        # INPUT LOGIC
+        
+        if Menu.current_page == PAGE_HISTORY_LIST:
+            max_selection = len(Menu.history_files)
+        elif Menu.current_page == PAGE_READY_TO_START:
+            max_selection = 1 
+        elif Menu.current_page == PAGE_HISTORY_VIEW:
+            content = Menu.selected_history_content
+            raw_lines = content.split("#")
+            if len(raw_lines) < 2:
+                raw_lines = content.split("\n")
+            valid_lines = [l for l in raw_lines if l.replace("\n", "").strip()]
+            max_selection = max(0, len(valid_lines) - 5)
+        else:
+            max_selection = 4
+        
+        # Encoder logic
         if Menu.input_handler.current_position >= 1:
             current_selection_index += 1
-            if current_selection_index > 4:
-                current_selection_index = 0
+            if current_selection_index > max_selection:
+                current_selection_index = 0 
             Menu.input_handler.current_position = 0
         elif Menu.input_handler.current_position <= -1:
             current_selection_index -= 1
             if current_selection_index < 0:
-                current_selection_index = 5
+                current_selection_index = max_selection
             Menu.input_handler.current_position = 0
 
         if not Menu.input_handler.button_has_been_released and button.value() == 1:
@@ -179,6 +201,10 @@ def __main__():
 
         if Menu.current_page == PAGE_MAINMENU:
             gui.draw_main_menu(current_selection_index, (Menu.input_handler.current_position))
+
+        # Draw Ready to Start page
+        elif Menu.current_page == PAGE_READY_TO_START:
+            gui.draw_ready_to_start(current_selection_index, TARGET_PAGE)
 
         elif Menu.current_page == PAGE_MEASURE_HR: 
             gui.draw_measure_hr(Measurer)
@@ -198,8 +224,12 @@ def __main__():
             else:
                 Menu.current_page = PAGE_KUBIOS_SHOW_RESULTS
 
-        elif Menu.current_page == PAGE_KUBIOS_SHOW_RESULTS:
-            gui.draw_kubios_show_results(Measurer)
+        elif Menu.current_page == PAGE_HISTORY_LIST:
+            gui.draw_history_list(current_selection_index, Menu.history_files)     
+
+        elif Menu.current_page == PAGE_HISTORY_VIEW:
+            gui.draw_history_file(Menu.selected_history_content, current_selection_index)
+
 
         #----------------------------------------
         #--------------END PAGES-----------------
@@ -208,53 +238,91 @@ def __main__():
 
         #If button pressed, select current option
         if button.value() == 0 and Menu.input_handler.button_has_been_released:
-            #MAINMENU
+            
+            # MAINMENU
             if Menu.current_page == PAGE_MAINMENU:
                 Menu.input_handler.button_has_been_released = False
+                
                 if current_selection_index == 0:
-                    #Measure HR selected
-                    Menu.current_page = PAGE_MEASURE_HR
+                    TARGET_PAGE = PAGE_MEASURE_HR
+                    Menu.current_page = PAGE_READY_TO_START
+                    
                 elif current_selection_index == 1:
-                    #Basic HRV selected
-                    Menu.hrv_measurement_started_ts = time.ticks_ms()
-                    Menu.current_page = PAGE_HRV
+                    TARGET_PAGE = PAGE_HRV
+                    Menu.current_page = PAGE_READY_TO_START
+                    
+                elif current_selection_index == 2:
+                    TARGET_PAGE = PAGE_KUBIOS
+                    Menu.current_page = PAGE_READY_TO_START
+                
+                elif current_selection_index == 3:
+                    Menu.history_files = history.get_history_files()
+                    Menu.current_page = PAGE_HISTORY_LIST
+                    Menu.input_handler.current_position = 0
+                    current_selection_index = 0
+                    
                 elif current_selection_index == 4:
                     # Settings (EXIT) selected
                     gracefully_exit()
                     break
 
-            # Page: PRESS TO START
+            # CONFIRM PAGE
             elif Menu.current_page == PAGE_READY_TO_START:
                 Menu.input_handler.button_has_been_released = False
                 
-                if TARGET_PAGE == PAGE_MEASURE_HR:
-                    if hasattr(gui, "time_started"):
-                        del gui.time_started
-                    if hasattr(gui, "already_cleared"):
-                        del gui.already_cleared
+                if current_selection_index == 0:
+                    if TARGET_PAGE == PAGE_MEASURE_HR:
+                        if hasattr(gui, "time_started"):
+                            del gui.time_started
+                        if hasattr(gui, "already_cleared"):
+                            del gui.already_cleared
+                    
+                    elif TARGET_PAGE == PAGE_HRV or TARGET_PAGE == PAGE_KUBIOS:
+                        Menu.hrv_measurement_started_ts = time.ticks_ms()
+                    
+                    Menu.current_page = TARGET_PAGE
+                    
+                elif current_selection_index == 1:
+                    Menu.current_page = PAGE_MAINMENU
+                    current_selection_index = 0
+
+            # HISTORY LIST PAGE
+            elif Menu.current_page == PAGE_HISTORY_LIST:
+                Menu.input_handler.button_has_been_released = False
                 
-                elif TARGET_PAGE == PAGE_HRV or TARGET_PAGE == PAGE_KUBIOS:
-                    Menu.hrv_measurement_started_ts = time.ticks_ms()
-                
-                Menu.current_page = TARGET_PAGE
-                
-            #If we are in measure HR page, go back to main menu
+                if current_selection_index == len(Menu.history_files):
+                    Menu.current_page = PAGE_MAINMENU
+                    
+                elif len(Menu.history_files) > 0:
+                    Menu.selected_history_content = history.get_history_content(current_selection_index)
+                    Menu.current_page = PAGE_HISTORY_VIEW
+                    current_selection_index = 0
+                    Menu.input_handler.current_position = 0
+                else:
+                    Menu.current_page = PAGE_MAINMENU
+
+            # HISTORY VIEW PAGE
+            elif Menu.current_page == PAGE_HISTORY_VIEW:
+                Menu.input_handler.button_has_been_released = False
+                Menu.current_page = PAGE_HISTORY_LIST
+                current_selection_index = 0
+
+            # EXIT FROM HR MEASUREMENT
             elif Menu.current_page == PAGE_MEASURE_HR:
                 Menu.input_handler.button_has_been_released = False
                 Menu.current_page = PAGE_MAINMENU
-                #Reset the time started for measure HR
                 if hasattr(gui, "time_started"):
                     del gui.time_started
                 if hasattr(gui, "already_cleared"):
                     del gui.already_cleared
+            
+            # EXIT FROM RESULTS
+            elif (Menu.current_page == PAGE_HRV_SHOW_RESULTS or Menu.current_page == PAGE_KUBIOS_SHOW_RESULTS):
+                Menu.input_handler.button_has_been_released = False
+                Menu.current_page = PAGE_MAINMENU
 
-        #Get the memory usage and print it
         if (i % 10) == 0:
             i = 0
-            #Get the memory without 
-            #mem_usage = len(Measurer.CACHE_STORAGE_200) + len(Measurer.CACHE_STORAGE_DYNAMIC) + len(Measurer.CACHE_STORAGE_BEATS)
-            #print("Caches: " + str(mem_usage))
-    
-    
+
 if __name__ == "__main__":
     __main__()
