@@ -15,7 +15,7 @@ class cGUI:
         self.oled.text("Initializing", 0, 0)
         self.oled.show()
 
-    def draw_main_menu(self, current_selection, anim_pos, anim_time):
+    def draw_main_menu(self, current_selection, anim_pos):
         self.oled.fill(0)
         if (current_selection == 0):
             self.oled.text("-> Measure HR", 0, 0)
@@ -38,16 +38,23 @@ class cGUI:
         else:
             self.oled.text("   Settings EXIT", 0, 40)
 
-        current_time = time.ticks_ms()
-        current_time = time.ticks_ms()
-        time_diff = time.ticks_diff(current_time, anim_time)
-        decay = 1 - min(max(time_diff / 1000, 0), 1)
-        base_width = int(self.oled.width * anim_pos)
-        line_width = int(base_width * decay)
-        if line_width > 0:
-            self.oled.hline((self.oled.width - line_width) // 2,
-            self.oled.height - 1,
-            line_width, 1)
+
+        height = int(abs(-0.25) * (self.oled.height // 2)) 
+        center_x = self.oled.width // 2
+        base_y = int(self.oled.height - 1)
+
+        if anim_pos > 0:
+            # Arrow pointing DOWN
+            top_y = base_y - height
+            self.oled.line(center_x, base_y, center_x - 3, base_y - 3, 1)
+            self.oled.line(center_x, base_y, center_x + 3, base_y - 3, 1)
+
+        elif anim_pos < 0:
+            # Arrow pointing UP
+            top_y = base_y - height
+            self.oled.line(center_x, top_y, center_x - 3, top_y + 3, 1)
+            self.oled.line(center_x, top_y, center_x + 3, top_y + 3, 1)
+
         self.oled.show()
 
     def draw_ready_to_start(self, current_selection):
