@@ -226,6 +226,8 @@ class cGUI:
         for i, line in enumerate(lines):
             if i >= 6:
                 break
+            line = line.replace("#", "")
+            line = line.replace("\n", "")
             self.oled.text(line, 0, i * 10)
         self.oled.show()
 
