@@ -25,13 +25,13 @@ def save_to_history_file(data):
     display_time = "{:02d}:{:02d}:{:02d} {:02d}.{:02d}.{:04d}".format(t[3], t[4], t[5], t[2], t[1], t[0])
     try:
         with open(filepath, "w") as f:
-            f.write("Date: {}\n\n".format(display_time))
-            f.write("Mean HR: {:.0f}\n".format(data.get("mean_hr_bpm", 0)))
-            f.write("Mean PPI: {:.0f}\n".format(data.get("mean_rr_ms", 0)))
-            f.write("RMSSD: {:.0f}\n".format(data.get("rmssd_ms", 0)))
-            f.write("SDNN: {:.0f}\n".format(data.get("sdnn_ms", 0)))
-            f.write("SNS: {:.2f}\n".format(data.get("sns_index", 0)))
-            f.write("PNS: {:.2f}\n".format(data.get("pns_index", 0)))
+            f.write("Date: {}\n\n".format(display_time) + "#")
+            f.write("Mean HR: {:.0f}\n".format(data.get("mean_hr_bpm", 0)) + "#")
+            f.write("Mean PPI: {:.0f}\n".format(data.get("mean_rr_ms", 0)) + "#")
+            f.write("RMSSD: {:.0f}\n".format(data.get("rmssd_ms", 0)) + "#")
+            f.write("SDNN: {:.0f}\n".format(data.get("sdnn_ms", 0)) + "#")
+            f.write("SNS: {:.2f}\n".format(data.get("sns_index", 0)) + "#")
+            f.write("PNS: {:.2f}\n".format(data.get("pns_index", 0)) + "#")
 
     except OSError as e:
         print("Failed to save history file:", e)

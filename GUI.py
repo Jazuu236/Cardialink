@@ -219,3 +219,13 @@ class cGUI:
         self.oled.text("Kubios Ready", 0, 0)
         self.oled.text("Analysis Done.", 0, 10)
         self.oled.show()
+
+    def draw_history_file(self, text):
+        self.oled.fill(0)
+        lines = text.split("#")
+        for i, line in enumerate(lines):
+            if i >= 6:
+                break
+            self.oled.text(line, 0, i * 10)
+        self.oled.show()
+
