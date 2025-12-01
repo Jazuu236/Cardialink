@@ -18,8 +18,8 @@ def get_history_files():
     return files
 
 # Saving history to file
-def save_to_history_file(data, tz_offset=2):
-    t = time.localtime(time.time() + tz_offset * 3600)
+def save_to_history_file(data):
+    t = time.localtime(time.time())
     filename = "kubios_{:04d}-{:02d}-{:02d}_{:02d}-{:02d}-{:02d}.txt".format(t[0], t[1], t[2], t[3], t[4], t[5])
     filepath = HISTORY_DIR + "/" + filename
     display_time = "{:02d}:{:02d}:{:02d} {:02d}.{:02d}.{:04d}".format(t[3], t[4], t[5], t[2], t[1], t[0])
@@ -54,3 +54,14 @@ def print_history_file(index):
             print("Failed to read history file:", e)
     else:
         print("Not valid option!")
+# Remove old files
+def prune_history_keep():
+    files = get_history_files()
+    if len(files) >= MAX_HISTORY:
+        oldest = files[0]
+        try:
+            os.remove(oldest)
+        except OSError as e:
+            print("Err", e)
+        
+prune_history_keep()

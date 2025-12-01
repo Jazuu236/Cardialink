@@ -3,7 +3,7 @@ import time
 import ujson
 from history import save_to_history_file
 
-# Connect to WIFI and MQTT
+# Connect to WIFI, MQTT and Synctime
 connect_wlan()
 mqtt_client = connect_mqtt()
 
