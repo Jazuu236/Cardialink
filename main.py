@@ -21,7 +21,6 @@ def show_logo(oled, width=128, height=64, duration=0):
 
 
 #GUI Page constants
-CURRENT_PAGE = -1
 TARGET_PAGE = -1 #
 PAGE_MAINMENU = 0
 PAGE_MEASURE_HR = 1
@@ -189,13 +188,13 @@ def __main__():
         elif menu.current_page == PAGE_HRV_SHOW_RESULTS:
             gui.draw_measure_hrv_show_results()
             
-        elif CURRENT_PAGE == PAGE_KUBIOS:
-            if FUCKASS_GLOBAL_HRV_MEASUREMENT_STARTED_TS > time.ticks_ms() - 30000:
-                gui.draw_measure_kubios(FUCKASS_GLOBAL_HRV_MEASUREMENT_STARTED_TS)
+        elif menu.current_page == PAGE_KUBIOS:
+            if menu.hrv_measurement_started_ts > time.ticks_ms() - 30000:
+                gui.draw_measure_kubios(menu.hrv_measurement_started_ts)
             else:
-                CURRENT_PAGE = PAGE_KUBIOS_SHOW_RESULTS
+                menu.current_page = PAGE_KUBIOS_SHOW_RESULTS
 
-        elif CURRENT_PAGE == PAGE_KUBIOS_SHOW_RESULTS:
+        elif menu.current_page == PAGE_KUBIOS_SHOW_RESULTS:
             gui.draw_kubios_show_results()
 
         #----------------------------------------
@@ -221,8 +220,8 @@ def __main__():
                     break
 
             # Page: PRESS TO START
-            elif CURRENT_PAGE == PAGE_READY_TO_START:
-                INPUT_HANDLER_button_has_been_released = False
+            elif menu.current_page == PAGE_READY_TO_START:
+                menu.input_handler.button_has_been_released = False
                 
                 if TARGET_PAGE == PAGE_MEASURE_HR:
                     if hasattr(gui, "time_started"):
@@ -231,9 +230,9 @@ def __main__():
                         del gui.already_cleared
                 
                 elif TARGET_PAGE == PAGE_HRV or TARGET_PAGE == PAGE_KUBIOS:
-                    FUCKASS_GLOBAL_HRV_MEASUREMENT_STARTED_TS = time.ticks_ms()
+                    menu.hrv_measurement_started_ts = time.ticks_ms()
                 
-                CURRENT_PAGE = TARGET_PAGE
+                menu.current_page = TARGET_PAGE
                 
             #If we are in measure HR page, go back to main menu
             elif menu.current_page == PAGE_MEASURE_HR:
