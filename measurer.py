@@ -10,6 +10,8 @@ CACHE_STORAGE_200 = [] #This cache has 200 readings (2 seconds of data), it is u
 CACHE_STORAGE_DYNAMIC = [] #This cache stores every reading.
 CACHE_STORAGE_BEATS = [] #This cache stores detected peaks as cBeat objects.
 
+PEAK_WAS_ALREADY_RECORDED = False
+
 class cBeat:
     def __init__(self, timestamp_ms):
         self.timestamp_ms = timestamp_ms
