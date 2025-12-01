@@ -50,10 +50,21 @@ class cGUI:
             line_width, 1)
         self.oled.show()
 
-    def draw_ready_to_start(self):
+    def draw_ready_to_start(self, current_selection):
         self.oled.fill(0)
-        self.oled.text("READY?", 40, 20)
-        self.oled.text("Press to Start", 10, 40)
+
+        # Confrim menu choice
+        mode_text = "Start"
+        if current_selection == 0:
+            mode_text = "Start HR?"
+        elif current_selection == 1:
+            mode_text = "Start HRV?"
+        elif current_selection == 2:
+            mode_text = "Start Kubios?"
+        
+        x_pos = (128 - (len(mode_text) * 8)) // 2
+        y_pos = 28
+        self.oled.text(mode_text, x_pos, y_pos)
         self.oled.show()
 
     def draw_measure_hr(self):

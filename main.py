@@ -172,10 +172,6 @@ def __main__():
     i2c = I2C(1, scl=Pin(15), sda=Pin(14), freq=400000)
     oled = SSD1306_I2C(128, 64, i2c)
     
-    # Show logo before GUI
-    #show_logo(oled)
-
-
     global INPUT_HANDLER_current_position
     global INPUT_HANDLER_last_modified_time
     global INPUT_HANDLER_button_has_been_released
@@ -221,7 +217,7 @@ def __main__():
             gui.draw_main_menu(current_selection_index, abs(INPUT_HANDLER_current_position), INPUT_HANDLER_last_modified_time)
         
         elif CURRENT_PAGE == PAGE_READY_TO_START:
-            gui.draw_ready_to_start()
+            gui.draw_ready_to_start(current_selection_index)
 
         elif CURRENT_PAGE == PAGE_MEASURE_HR: 
             gui.draw_measure_hr()
