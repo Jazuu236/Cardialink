@@ -1,5 +1,4 @@
 import time
-import measurer
 import panic
 import peak_processing
 import HRV
@@ -9,9 +8,9 @@ class cGUI:
     def __init__(self, oled):
         self.oled = oled
 
-    def draw_page_init(self):
+    def draw_page_init(self, Measurer):
         self.oled.fill(0)
-        measurer.control_led(0)
+        Measurer.control_led(0)
         self.oled.text("Initializing", 0, 0)
         self.oled.show()
 
@@ -74,15 +73,15 @@ class cGUI:
         self.oled.text(mode_text, x_pos, y_pos)
         self.oled.show()
 
-    def draw_measure_hr(self):
+    def draw_measure_hr(self, Measurer):
         #Display current read
-        if len(measurer.CACHE_STORAGE_BEATS) == 0:
+        if len(Measurer.CACHE_STORAGE_BEATS) == 0:
             self.oled.fill(0)
             self.oled.text("Read: N/A", 0, 0)
             self.oled.show()
             return False
-        num_beats = measurer.get_beat_cache_length()
-        time_since_first_beat = measurer.CACHE_STORAGE_BEATS[0].age() if num_beats > 0 else 0
+        num_beats = Measurer.get_beat_cache_length()
+        time_since_first_beat = Measurer.CACHE_STORAGE_BEATS[0].age() if num_beats > 0 else 0
 
         if not time_since_first_beat > 0:
             self.oled.fill(0)
@@ -117,13 +116,13 @@ class cGUI:
 
         self.oled.fill_rect(0, 10, graph_width, graph_height, 0)
 
-        if len(measurer.CACHE_STORAGE_200) < 2:
+        if len(Measurer.CACHE_STORAGE_200) < 2:
             self.oled.text("Graph: N/A", 0, 10)
             self.oled.show()
             return False
 
-        max_value = max(measurer.CACHE_STORAGE_200)
-        min_value = min(measurer.CACHE_STORAGE_200)
+        max_value = max(Measurer.CACHE_STORAGE_200)
+        min_value = min(Measurer.CACHE_STORAGE_200)
         value_range = max_value - min_value
 
         if value_range == 0:
@@ -131,13 +130,13 @@ class cGUI:
             self.oled.show()
             return False
 
-        for i in range(len(measurer.CACHE_STORAGE_200) - 1):
-            val1 = measurer.CACHE_STORAGE_200[i]
-            val2 = measurer.CACHE_STORAGE_200[i + 1]
+        for i in range(len(Measurer.CACHE_STORAGE_200) - 1):
+            val1 = Measurer.CACHE_STORAGE_200[i]
+            val2 = Measurer.CACHE_STORAGE_200[i + 1]
             y1 = 10 + graph_height - int(((val1 - min_value) / value_range) * graph_height)
             y2 = 10 + graph_height - int(((val2 - min_value) / value_range) * graph_height)
-            x1 = (i * graph_width) // len(measurer.CACHE_STORAGE_200)
-            x2 = ((i + 1) * graph_width) // len(measurer.CACHE_STORAGE_200)
+            x1 = (i * graph_width) // len(Measurer.CACHE_STORAGE_200)
+            x2 = ((i + 1) * graph_width) // len(Measurer.CACHE_STORAGE_200)
             self.oled.line(x1, y1, x2, y2, 1)
 
 
@@ -175,27 +174,27 @@ class cGUI:
         self.oled.show()
 
 
-    def draw_measure_hrv_show_results(self):
+    def draw_measure_hrv_show_results(self, Measurer):
         self.oled.fill(0)
         #Calculate the treshold for peak detection
-        if len(measurer.CACHE_STORAGE_DYNAMIC) < 2:
+        if len(Measurer.CACHE_STORAGE_DYNAMIC) < 2:
             self.oled.text("Measurement failed", 0, 0)
             self.oled.text("Not enough data", 0, 10)
             self.oled.show()
             return
-        avg_value = measurer.cache_get_average_value(measurer.CACHETYPE_DYNAMIC)
-        threshold = avg_value + (measurer.dynamic_cache_get_average_peak_value() - avg_value) * 0.6
+        avg_value = Measurer.cache_get_average_value(Measurer.CACHETYPE_DYNAMIC)
+        threshold = avg_value + (Measurer.dynamic_cache_get_average_peak_value() - avg_value) * 0.6
 
 
         #Run PPI processing
-        detected_peaks = peak_processing.detect_peaks(measurer.CACHE_STORAGE_DYNAMIC, threshold, 10)
+        detected_peaks = peak_processing.detect_peaks(Measurer.CACHE_STORAGE_DYNAMIC, threshold, 10)
 
         ppi = []
 
         for i in range(1, len(detected_peaks)):
             ppi.append(detected_peaks[i][0] - detected_peaks[i-1][0])
         
-        filtered_ppi = measurer.ppi_filter_abnormalities(ppi, 33) #Filter all abnormalities greater than 33% deviation (pos <-> neg)
+        filtered_ppi = Measurer.ppi_filter_abnormalities(ppi, 33) #Filter all abnormalities greater than 33% deviation (pos <-> neg)
 
         hrv_results = HRV.hrv_analysis(filtered_ppi)
         #Display everything
@@ -209,10 +208,10 @@ class cGUI:
         self.oled.show()
 
     # Kubios
-    def draw_kubios_show_results(self):
+    def draw_kubios_show_results(self, Measurer):
         self.oled.fill(0)
         
-        if len(measurer.CACHE_STORAGE_DYNAMIC) < 2:
+        if len(Measurer.CACHE_STORAGE_DYNAMIC) < 2:
             self.oled.text("Measurement failed", 0, 0)
             self.oled.show()
             return

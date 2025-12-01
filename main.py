@@ -83,44 +83,44 @@ def gracefully_exit():
     #Shutdown the screen
     oled.poweroff()
 
-def pulse_timer_callback(timer, menu, measurer):
-    if (menu.current_page != PAGE_MEASURE_HR and menu.current_page != PAGE_HRV and menu.current_page != PAGE_HRV_SHOW_RESULTS):
-        measurer.clear_cache(measurer.CACHETYPE_DYNAMIC)
-        measurer.clear_cache(measurer.CACHETYPE_200)
-        measurer.clear_cache(measurer.CACHETYPE_BEATS)
+def pulse_timer_callback(timer, Menu, Measurer):
+    if (Menu.current_page != PAGE_MEASURE_HR and Menu.current_page != PAGE_HRV and Menu.current_page != PAGE_HRV_SHOW_RESULTS):
+        Measurer.clear_cache(Measurer.CACHETYPE_DYNAMIC)
+        Measurer.clear_cache(Measurer.CACHETYPE_200)
+        Measurer.clear_cache(Measurer.CACHETYPE_BEATS)
         return
     raw_value = adc.read_u16()  #(0–65535)
     if ((raw_value < LEGAL_LOW) or (raw_value > LEGAL_HIGH)):
         return 
     
     #If we are in view result mode, we do not need to do anything else
-    if (CURRENT_PAGE == PAGE_HRV_SHOW_RESULTS or CURRENT_PAGE == PAGE_KUBIOS_SHOW_RESULTS):
+    if (Menu.current_page == PAGE_HRV_SHOW_RESULTS or Menu.current_page == PAGE_KUBIOS_SHOW_RESULTS):
         return
 
     #Update both caches
-    measurer.cache_update(measurer.CACHETYPE_200, raw_value)
-    measurer.cache_update(measurer.CACHETYPE_DYNAMIC, raw_value)
+    Measurer.cache_update(Measurer.CACHETYPE_200, raw_value)
+    Measurer.cache_update(Measurer.CACHETYPE_DYNAMIC, raw_value)
 
     #Get the peak out of 200
-    peak_value = measurer.cache_get_peak_value(measurer.CACHETYPE_200)
+    peak_value = Measurer.cache_get_peak_value(Measurer.CACHETYPE_200)
     if (peak_value == 0):
         return
-    average_value = measurer.cache_get_average_value(measurer.CACHETYPE_200)
+    average_value = Measurer.cache_get_average_value(Measurer.CACHETYPE_200)
     difference = peak_value - average_value
     if (raw_value >= (average_value + difference * 0.6)):
-        if (not measurer.PEAK_WAS_ALREADY_RECORDED):
-            beat = measurer.cBeat(time.ticks_ms())
-            measurer.add_to_beat_cache(beat)
-            measurer.PEAK_WAS_ALREADY_RECORDED = True
-        measurer.control_led(1)
+        if (not Measurer.PEAK_WAS_ALREADY_RECORDED):
+            beat = Measurer.cBeat(time.ticks_ms())
+            Measurer.add_to_beat_cache(beat)
+            Measurer.PEAK_WAS_ALREADY_RECORDED = True
+        Measurer.control_led(1)
     else:
-        measurer.PEAK_WAS_ALREADY_RECORDED = False
-        measurer.control_led(0)
+        Measurer.PEAK_WAS_ALREADY_RECORDED = False
+        Measurer.control_led(0)
 
-    if (CURRENT_PAGE != PAGE_HRV and CURRENT_PAGE != PAGE_HRV_SHOW_RESULTS and CURRENT_PAGE != PAGE_KUBIOS and CURRENT_PAGE != PAGE_KUBIOS_SHOW_RESULTS):
-        measurer.clear_cache(measurer.CACHETYPE_DYNAMIC)
+    if (Menu.current_page != PAGE_HRV and Menu.current_page != PAGE_HRV_SHOW_RESULTS and Menu.current_page != PAGE_KUBIOS and Menu.current_page != PAGE_KUBIOS_SHOW_RESULTS):
+        Measurer.clear_cache(Measurer.CACHETYPE_DYNAMIC)
     else:
-        measurer.clear_cache(measurer.CACHETYPE_BEATS)
+        Measurer.clear_cache(Measurer.CACHETYPE_BEATS)
 
 def __main__():
     
@@ -131,18 +131,22 @@ def __main__():
     #show_logo(oled)
 
     #Create menu state object
-    menu = menu_state.cMenuState()
+    Menu = menu_state.cMenuState()
+
+    #Create measurer object
+    Measurer = measurer.cMeasurer()
+
 
     #Setup the interrupts
 
-    encoder_A.irq(trigger=Pin.IRQ_RISING | Pin.IRQ_FALLING, handler=lambda pin: encoder_turn(pin, menu.input_handler))
+    encoder_A.irq(trigger=Pin.IRQ_RISING | Pin.IRQ_FALLING, handler=lambda pin: encoder_turn(pin, Menu.input_handler))
 
     timer = Timer()
-    timer.init(freq=100, mode=Timer.PERIODIC, callback=lambda t: pulse_timer_callback(t, menu, measurer))
+    timer.init(freq=100, mode=Timer.PERIODIC, callback=lambda t: pulse_timer_callback(t, Menu, Measurer))
 
     gui = GUI.cGUI(oled)
-    gui.draw_page_init()
-    menu.current_page = PAGE_MAINMENU
+    gui.draw_page_init(Measurer)
+    Menu.current_page = PAGE_MAINMENU
     current_selection_index = 0
 
     i = 0
@@ -151,19 +155,19 @@ def __main__():
         i += 1
         call_time_start = time.ticks_ms()
         #Input handling
-        if menu.input_handler.current_position >= 1:
+        if Menu.input_handler.current_position >= 1:
             current_selection_index += 1
             if current_selection_index > 4:
                 current_selection_index = 0
-            menu.input_handler.current_position = 0
-        elif menu.input_handler.current_position <= -1:
+            Menu.input_handler.current_position = 0
+        elif Menu.input_handler.current_position <= -1:
             current_selection_index -= 1
             if current_selection_index < 0:
                 current_selection_index = 5
-            menu.input_handler.current_position = 0
+            Menu.input_handler.current_position = 0
 
-        if not menu.input_handler.button_has_been_released and button.value() == 1:
-            menu.input_handler.button_has_been_released = True
+        if not Menu.input_handler.button_has_been_released and button.value() == 1:
+            Menu.input_handler.button_has_been_released = True
 
         if panic.must_exit:
             print("###PANIC### " + panic.exit_reason)
@@ -173,29 +177,29 @@ def __main__():
         #--------------PAGES-----------------
         #------------------------------------
 
-        if menu.current_page == PAGE_MAINMENU:
-            gui.draw_main_menu(current_selection_index, (menu.input_handler.current_position))
+        if Menu.current_page == PAGE_MAINMENU:
+            gui.draw_main_menu(current_selection_index, (Menu.input_handler.current_position))
 
-        elif menu.current_page == PAGE_MEASURE_HR: 
-            gui.draw_measure_hr()
+        elif Menu.current_page == PAGE_MEASURE_HR: 
+            gui.draw_measure_hr(Measurer)
 
-        elif menu.current_page == PAGE_HRV:
-            if menu.hrv_measurement_started_ts > time.ticks_ms() - 30000:
-                gui.draw_measure_hrv(menu.hrv_measurement_started_ts)
+        elif Menu.current_page == PAGE_HRV:
+            if Menu.hrv_measurement_started_ts > time.ticks_ms() - 30000:
+                gui.draw_measure_hrv(Menu.hrv_measurement_started_ts)
             else:
-                menu.current_page = PAGE_HRV_SHOW_RESULTS
+                Menu.current_page = PAGE_HRV_SHOW_RESULTS
 
-        elif menu.current_page == PAGE_HRV_SHOW_RESULTS:
-            gui.draw_measure_hrv_show_results()
+        elif Menu.current_page == PAGE_HRV_SHOW_RESULTS:
+            gui.draw_measure_hrv_show_results(Measurer)
             
-        elif menu.current_page == PAGE_KUBIOS:
-            if menu.hrv_measurement_started_ts > time.ticks_ms() - 30000:
-                gui.draw_measure_kubios(menu.hrv_measurement_started_ts)
+        elif Menu.current_page == PAGE_KUBIOS:
+            if Menu.hrv_measurement_started_ts > time.ticks_ms() - 30000:
+                gui.draw_measure_kubios(Menu.hrv_measurement_started_ts)
             else:
-                menu.current_page = PAGE_KUBIOS_SHOW_RESULTS
+                Menu.current_page = PAGE_KUBIOS_SHOW_RESULTS
 
-        elif menu.current_page == PAGE_KUBIOS_SHOW_RESULTS:
-            gui.draw_kubios_show_results()
+        elif Menu.current_page == PAGE_KUBIOS_SHOW_RESULTS:
+            gui.draw_kubios_show_results(Measurer)
 
         #----------------------------------------
         #--------------END PAGES-----------------
@@ -203,25 +207,25 @@ def __main__():
 
 
         #If button pressed, select current option
-        if button.value() == 0 and menu.input_handler.button_has_been_released:
+        if button.value() == 0 and Menu.input_handler.button_has_been_released:
             #MAINMENU
-            if menu.current_page == PAGE_MAINMENU:
-                menu.input_handler.button_has_been_released = False
+            if Menu.current_page == PAGE_MAINMENU:
+                Menu.input_handler.button_has_been_released = False
                 if current_selection_index == 0:
                     #Measure HR selected
-                    menu.current_page = PAGE_MEASURE_HR
+                    Menu.current_page = PAGE_MEASURE_HR
                 elif current_selection_index == 1:
                     #Basic HRV selected
-                    menu.hrv_measurement_started_ts = time.ticks_ms()
-                    menu.current_page = PAGE_HRV
+                    Menu.hrv_measurement_started_ts = time.ticks_ms()
+                    Menu.current_page = PAGE_HRV
                 elif current_selection_index == 4:
                     # Settings (EXIT) selected
                     gracefully_exit()
                     break
 
             # Page: PRESS TO START
-            elif menu.current_page == PAGE_READY_TO_START:
-                menu.input_handler.button_has_been_released = False
+            elif Menu.current_page == PAGE_READY_TO_START:
+                Menu.input_handler.button_has_been_released = False
                 
                 if TARGET_PAGE == PAGE_MEASURE_HR:
                     if hasattr(gui, "time_started"):
@@ -230,14 +234,14 @@ def __main__():
                         del gui.already_cleared
                 
                 elif TARGET_PAGE == PAGE_HRV or TARGET_PAGE == PAGE_KUBIOS:
-                    menu.hrv_measurement_started_ts = time.ticks_ms()
+                    Menu.hrv_measurement_started_ts = time.ticks_ms()
                 
-                menu.current_page = TARGET_PAGE
+                Menu.current_page = TARGET_PAGE
                 
             #If we are in measure HR page, go back to main menu
-            elif menu.current_page == PAGE_MEASURE_HR:
-                menu.input_handler.button_has_been_released = False
-                menu.current_page = PAGE_MAINMENU
+            elif Menu.current_page == PAGE_MEASURE_HR:
+                Menu.input_handler.button_has_been_released = False
+                Menu.current_page = PAGE_MAINMENU
                 #Reset the time started for measure HR
                 if hasattr(gui, "time_started"):
                     del gui.time_started
@@ -248,7 +252,7 @@ def __main__():
         if (i % 10) == 0:
             i = 0
             #Get the memory without 
-            mem_usage = len(measurer.CACHE_STORAGE_200) + len(measurer.CACHE_STORAGE_DYNAMIC) + len(measurer.CACHE_STORAGE_BEATS)
+            #mem_usage = len(Measurer.CACHE_STORAGE_200) + len(Measurer.CACHE_STORAGE_DYNAMIC) + len(Measurer.CACHE_STORAGE_BEATS)
             #print("Caches: " + str(mem_usage))
     
     
