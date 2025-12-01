@@ -90,10 +90,10 @@ def encoder_turn(pin):
 
     if encoder_B.value() != encoder_A.value():
         if (INPUT_HANDLER_current_position < 1):
-            INPUT_HANDLER_current_position += 0.9 + abs(INPUT_HANDLER_current_position) * 0.0
+            INPUT_HANDLER_current_position += 0.25 
     else:
         if (INPUT_HANDLER_current_position > -1):
-            INPUT_HANDLER_current_position -= 0.9 + abs(INPUT_HANDLER_current_position) * 0.0
+            INPUT_HANDLER_current_position -= 0.25
         
 
 def gracefully_exit():
