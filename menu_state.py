@@ -7,3 +7,4 @@ class cMenuState:
         self.current_page = 0
         self.hrv_measurement_started_ts = 0
         self.input_handler = self.cInputHandlerState()
+

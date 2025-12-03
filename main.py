@@ -11,6 +11,8 @@ import panic
 import framebuf
 import menu_state
 import history
+import peak_processing
+import kubios
 
 def show_logo(oled, width=128, height=64, duration=0):
     logo = framebuf.FrameBuffer(bytearray(startup_logo), width, height, framebuf.MONO_VLSB)
@@ -138,7 +140,10 @@ def __main__():
     #Create measurer object
     Measurer = measurer.cMeasurer()
 
-
+    # Initialize Kubios Handler
+    Kubios = kubios.KubiosHandler()
+    kubios_sent = False
+    
     #Setup the interrupts
     encoder_A.irq(trigger=Pin.IRQ_RISING | Pin.IRQ_FALLING, handler=lambda pin: encoder_turn(pin, Menu.input_handler))
 
@@ -161,6 +166,7 @@ def __main__():
         i += 1
         
         # INPUT LOGIC
+        Kubios.check_messages()
         
         if Menu.current_page == PAGE_HISTORY_LIST:
             max_selection = len(Menu.history_files)
@@ -202,7 +208,6 @@ def __main__():
         if Menu.current_page == PAGE_MAINMENU:
             gui.draw_main_menu(current_selection_index, (Menu.input_handler.current_position))
 
-        # Draw Ready to Start page
         elif Menu.current_page == PAGE_READY_TO_START:
             gui.draw_ready_to_start(current_selection_index, TARGET_PAGE)
 
@@ -212,7 +217,18 @@ def __main__():
         elif Menu.current_page == PAGE_HRV:
             if Menu.hrv_measurement_started_ts > time.ticks_ms() - 30000:
                 gui.draw_measure_hrv(Menu.hrv_measurement_started_ts)
+                kubios_sent = False
             else:
+                if not kubios_sent:
+                    ppi_list = peak_processing.extract_ppi(Measurer)
+                    
+                    if len(ppi_list) > 2:
+                        try:
+                            Kubios.send_analysis_request(ppi_list)
+                        except Exception as e:
+                            print("Failed to send Data:", e)
+                    
+                    kubios_sent = True
                 Menu.current_page = PAGE_HRV_SHOW_RESULTS
 
         elif Menu.current_page == PAGE_HRV_SHOW_RESULTS:
@@ -221,8 +237,22 @@ def __main__():
         elif Menu.current_page == PAGE_KUBIOS:
             if Menu.hrv_measurement_started_ts > time.ticks_ms() - 30000:
                 gui.draw_measure_kubios(Menu.hrv_measurement_started_ts)
+                kubios_sent = False
             else:
+                if not kubios_sent:
+                    ppi_list = peak_processing.extract_ppi(Measurer)
+                    
+                    if len(ppi_list) > 2:
+                        Kubios.send_analysis_request(ppi_list)
+                    else:
+                        print("Not enough valid peaks found")
+                    
+                    kubios_sent = True
                 Menu.current_page = PAGE_KUBIOS_SHOW_RESULTS
+
+        elif Menu.current_page == PAGE_KUBIOS_SHOW_RESULTS:
+            Kubios.check_messages()
+            gui.draw_kubios_show_results(Kubios)
 
         elif Menu.current_page == PAGE_HISTORY_LIST:
             gui.draw_history_list(current_selection_index, Menu.history_files)     

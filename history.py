@@ -32,28 +32,41 @@ def save_to_history_file(data):
     
     try:
         with open(filepath, "w") as f:
-            # Write Date, then Time, then Data
-            f.write("Date: {}\n".format(date_str) + "#")
-            f.write("Time: {}\n".format(time_str) + "#")
-            f.write("Mean HR: {:.0f}\n".format(data.get("mean_hr_bpm", 0)) + "#")
-            f.write("Mean PPI: {:.0f}\n".format(data.get("mean_rr_ms", 0)) + "#")
-            f.write("RMSSD: {:.0f}\n".format(data.get("rmssd_ms", 0)) + "#")
-            f.write("SDNN: {:.0f}\n".format(data.get("sdnn_ms", 0)) + "#")
-            f.write("SNS: {:.2f}\n".format(data.get("sns_index", 0)) + "#")
-            f.write("PNS: {:.2f}\n".format(data.get("pns_index", 0)) + "#")
-            f.write("Stress: {:.2f}\n".format(data.get("stress_index", 0)) + "#")
-            f.write("Readiness: {:.2f}\n".format(data.get("readiness", 0)) + "#")
+            f.write("Date: {}#".format(date_str))
+            f.write("Time: {}#".format(time_str))
+            
+            if isinstance(data, dict):
+                f.write("Mean HR: {:.0f}#".format(data.get("mean_hr_bpm", 0)))
+                f.write("Mean PPI: {:.0f}#".format(data.get("mean_rr_ms", 0)))
+                f.write("RMSSD: {:.0f}#".format(data.get("rmssd_ms", 0)))
+                f.write("SDNN: {:.0f}#".format(data.get("sdnn_ms", 0)))
+                f.write("SNS: {:.2f}\n".format(data.get("sns_index", 0)) + "#")
+                f.write("PNS: {:.2f}\n".format(data.get("pns_index", 0)) + "#")
+                f.write("Stress: {:.1f}#".format(data.get("stress_index", 0)))
+                f.write("Readiness: {:.1f}#".format(data.get("readiness", 0)))
+            else:
+                f.write("Raw: " + str(data) + "#")
+        
+        print(f"DEBUG: Saved to {filepath}")
+        
         prune_history_keep()
 
     except OSError as e:
         print("Failed to save history file:", e)
 
-# History list
-def list_history_files():
+# Remove old files
+def prune_history_keep():
     files = get_history_files()
-    for i, f in enumerate(files):
-        print("[{}] {}".format(i + 1, f.split("/")[-1]))
-    return files
+
+    while len(files) > MAX_HISTORY:
+        oldest = files[-1] 
+        try:
+            print(f"DEBUG: Pruning old file {oldest}")
+            os.remove(oldest)
+            files = get_history_files()
+        except OSError as e:
+            print("Can't remove old files", e)
+            break
 
 # Return file as a string
 def get_history_content(index):
@@ -67,16 +80,4 @@ def get_history_content(index):
     else:
         return "File not found"
 
-# Remove old files
-def prune_history_keep():
-    files = get_history_files()
-    while len(files) >= MAX_HISTORY:
-        oldest = files[-1] 
-        try:
-            os.remove(oldest)
-            files = get_history_files()
-        except OSError as e:
-            print("Can't remove old files", e)
-            break
-        
-prune_history_keep()
+print(f"History files count: {len(get_history_files())}")

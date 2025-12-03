@@ -125,3 +125,4 @@ class cMeasurer:
             return ppi_data
         average_ppi = sum(ppi_data) / len(ppi_data)
         return [ppi for ppi in ppi_data if abs(ppi - average_ppi) / average_ppi * 100 <= max_deviation_percentage]
+

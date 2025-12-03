@@ -2,6 +2,7 @@ import network
 from time import sleep
 from machine import RTC
 from umqtt.simple import MQTTClient
+import ntptime
 import time
 
 #Finds the Pico's MAC 

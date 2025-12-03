@@ -1,11 +1,9 @@
 # HRV analysis from Peak to Peak Interval(PPI)
-import panic
-
 def hrv_analysis(ppi_data):
 
     #Prevent division by zero
     if len(ppi_data) <= 2:
-        panic.panic("Mean PPI is zero in HRV analysis.")
+        print("Not enough PPI data for HRV analysis.")
         return {
             "Mean_PPI": 0,
             "Mean_HR": 0,
@@ -23,7 +21,7 @@ def hrv_analysis(ppi_data):
     mean_ppi = int(mean_ppi)
 
     if mean_ppi == 0:
-        panic.panic("Mean PPI is zero, cannot compute HRV metrics.")
+        print("Mean PPI is zero, cannot compute HRV metrics.")
         return {
             "Mean_PPI": 0,
             "Mean_HR": 0,
@@ -48,3 +46,4 @@ def hrv_analysis(ppi_data):
         "SDNN": sdnn,
         "RMSSD": rmssd
     }
+

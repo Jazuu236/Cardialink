@@ -44,3 +44,25 @@ def detect_peaks(data, threshold, sampling_interval):
     
     
     return filtered_peaks
+
+# Get peak to peak values for kubios
+def extract_ppi(measurer):
+    # Check for data
+    if len(measurer.CACHE_STORAGE_DYNAMIC) <= 2:
+        return []
+    # Calculate treshold atuomatically
+    avg_val = measurer.cache_get_average_value(measurer.CACHETYPE_DYNAMIC)
+    peak_avg = measurer.dynamic_cache_get_average_peak_value()
+    threshold = avg_val + (peak_avg - avg_val) * 0.6
+    # Detect peaks
+    peaks = detect_peaks(measurer.CACHE_STORAGE_DYNAMIC, threshold, 10)
+
+    # Get intervals
+    ppi_list = []
+    for k in range(1, len(peaks)):
+        diff = peaks[k][0] - peaks[k-1][0]
+        # Filter unrealistic values (300ms - 2000ms)
+        if 300 < diff < 2000:
+            ppi_list.append(diff)
+            
+    return ppi_list

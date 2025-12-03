@@ -246,19 +246,47 @@ class cGUI:
 
         self.oled.show()
 
-    def draw_kubios_show_results(self, Measurer):
+    def draw_kubios_show_results(self, kubios_handler):
         """
-        Display the completion message for Kubios analysis.
+        Display Kubios results or a loading screen.
         """
         self.oled.fill(0)
-        
-        if len(Measurer.CACHE_STORAGE_DYNAMIC) < 2:
-            self.oled.text("Measurement failed", 0, 0)
+
+        # 1. Check if we are still waiting for data
+        if kubios_handler.waiting_for_response:
+            dots = ((time.ticks_ms() // 500) % 4)
+            self.oled.text("Sending Data" + dots * ".", 0, 0)
+            self.oled.text("Wait for WiFi...", 0, 20)
             self.oled.show()
             return
-            
-        self.oled.text("Kubios Ready", 0, 0)
-        self.oled.text("Analysis Done.", 0, 10)
+
+        # 2. Check if we have results
+        results = kubios_handler.analysis_result
+        if results is None:
+            self.oled.text("Measurement Fail", 0, 0)
+            self.oled.text("Or WiFi Error", 0, 10)
+            self.oled.text("Try again", 0, 30)
+            self.oled.show()
+            return
+
+        # 3. Display the Kubios Data
+        self.oled.text("Kubios Results:", 0, 0)
+        
+        # Row 1: Stress & Readiness
+        stress = results.get("stress_index", 0)
+        ready = results.get("readiness", 0)
+        self.oled.text("Strs:{:.1f} Rdy:{:.1f}".format(stress, ready), 0, 10)
+        
+        # Row 2: PNS & SNS (Parasympathetic/Sympathetic)
+        pns = results.get("pns_index", 0)
+        sns = results.get("sns_index", 0)
+        self.oled.text("PNS:{:.1f} SNS:{:.1f}".format(pns, sns), 0, 20)
+
+        # Row 3: Standard Metrics
+        hr = results.get("mean_hr_bpm", 0)
+        rmssd = results.get("rmssd_ms", 0)
+        self.oled.text("HR:{:.0f} RMSSD:{:.0f}".format(hr, rmssd), 0, 30)
+        
         self.oled.show()
 
     def draw_history_list(self, current_selection, history_files):
