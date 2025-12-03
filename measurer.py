@@ -1,6 +1,5 @@
 from machine import ADC, Pin
 import time
-import panic
 
 class cMeasurer:
     CACHETYPE_200 = 0
@@ -49,8 +48,7 @@ class cMeasurer:
             self.CACHE_STORAGE_DYNAMIC.append(value)
             return True
         else:
-            panic.panic(f"Measurer.cache_update called with invalid cache_type: {cache_type}")
-            return False
+            raise ValueError(f"Measurer.cache_update called with invalid cache_type: {cache_type}")
 
     def clear_cache(self, cache_type):
         if cache_type == self.CACHETYPE_200:
@@ -60,7 +58,7 @@ class cMeasurer:
         elif cache_type == self.CACHETYPE_BEATS:
             self.CACHE_STORAGE_BEATS = []
         else:
-            panic.panic(f"Measurer.clear_cache called with invalid cache_type: {cache_type}")
+            raise ValueError(f"Measurer.clear_cache called with invalid cache_type: {cache_type}")
 
     def clear_cache_with_limit(self, cache_type, limit):
         if cache_type == self.CACHETYPE_BEATS:
@@ -79,8 +77,7 @@ class cMeasurer:
         elif cache_type == self.CACHETYPE_DYNAMIC:
             return max(self.CACHE_STORAGE_DYNAMIC) if self.CACHE_STORAGE_DYNAMIC else 0
         else:
-            panic.panic(f"Measurer.cache_get_peak_value called with invalid cache_type: {cache_type}")
-            return 0
+            raise ValueError(f"Measurer.cache_get_peak_value called with invalid cache_type: {cache_type}")
 
     def cache_get_average_value(self, cache_type):
         if cache_type == self.CACHETYPE_200:
@@ -88,8 +85,7 @@ class cMeasurer:
         elif cache_type == self.CACHETYPE_DYNAMIC:
             return sum(self.CACHE_STORAGE_DYNAMIC) / len(self.CACHE_STORAGE_DYNAMIC) if self.CACHE_STORAGE_DYNAMIC else 0
         else:
-            panic.panic(f"Measurer.cache_get_average_value called with invalid cache_type: {cache_type}")
-            return 0
+            raise ValueError(f"Measurer.cache_get_average_value called with invalid cache_type: {cache_type}")
 
     def cache_get_peak_ratio(self, cache_type):
         if cache_type == self.CACHETYPE_200:
@@ -97,8 +93,7 @@ class cMeasurer:
         elif cache_type == self.CACHETYPE_DYNAMIC:
             cache = self.CACHE_STORAGE_DYNAMIC
         else:
-            panic.panic(f"Measurer.cache_get_peak_ratio called with invalid cache_type: {cache_type}")
-            return 0
+            raise ValueError(f"Measurer.cache_get_peak_ratio called with invalid cache_type: {cache_type}")
 
         if not cache:
             return 0
@@ -125,4 +120,3 @@ class cMeasurer:
             return ppi_data
         average_ppi = sum(ppi_data) / len(ppi_data)
         return [ppi for ppi in ppi_data if abs(ppi - average_ppi) / average_ppi * 100 <= max_deviation_percentage]
-

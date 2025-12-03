@@ -7,7 +7,6 @@ from visual_binary_data import startup_logo
 import time
 import GUI
 import measurer
-import panic
 import framebuf
 import menu_state
 import history
@@ -196,10 +195,6 @@ def __main__():
         if not Menu.input_handler.button_has_been_released and button.value() == 1:
             Menu.input_handler.button_has_been_released = True
 
-        if panic.must_exit:
-            print("###PANIC### " + panic.exit_reason)
-            gracefully_exit()
-
         # -------------------
         # Pages
         # -------------------
@@ -309,4 +304,3 @@ def __main__():
 
 if __name__ == "__main__":
     __main__()
-

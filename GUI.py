@@ -1,5 +1,4 @@
 import time
-import panic
 import peak_processing
 import HRV
 
