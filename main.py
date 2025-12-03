@@ -140,14 +140,18 @@ def pulse_timer_callback(timer, Menu, Measurer):
         Measurer.control_led(0)
 
     # Clear caches based on page
-    if Menu.current_page in (PAGE_HRV, PAGE_HRV_SHOW_RESULTS):
+    if Menu.current_page in (PAGE_HRV, PAGE_HRV_SHOW_RESULTS, PAGE_KUBIOS, PAGE_KUBIOS_SHOW_RESULTS):
         Measurer.clear_cache(Measurer.CACHETYPE_BEATS)
+
+    #Limit dynamic cache to 1000 when measuring HR
+    if Menu.current_page == PAGE_MEASURE_HR:
+        Measurer.clear_cache_with_limit(Measurer.CACHETYPE_DYNAMIC, 1000)
 
 # -------------------------
 # Main
 # -------------------------
 def __main__():
-    show_logo(oled, duration=2)
+    show_logo(oled, duration=0)
     Menu = menu_state.cMenuState()
     Measurer = measurer.cMeasurer()
     Kubios = kubios.KubiosHandler()
@@ -301,6 +305,11 @@ def __main__():
 
         if (i % 10) == 0:
             i = 0
+            print("Cache sizes: DYN={}, 200={}, BEATS={}".format(
+                len(Measurer.CACHE_STORAGE_DYNAMIC),
+                len(Measurer.CACHE_STORAGE_200),
+                len(Measurer.CACHE_STORAGE_BEATS)
+            ))
 
 if __name__ == "__main__":
     __main__()
