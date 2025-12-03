@@ -81,3 +81,4 @@ def get_history_content(index):
         return "File not found"
 
 print(f"History files count: {len(get_history_files())}")
+
