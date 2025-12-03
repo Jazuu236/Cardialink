@@ -44,6 +44,7 @@ def save_to_history_file(data):
                 f.write("PNS: {:.2f}\n".format(data.get("pns_index", 0)) + "#")
                 f.write("Stress: {:.1f}#".format(data.get("stress_index", 0)))
                 f.write("Readiness: {:.1f}#".format(data.get("readiness", 0)))
+                f.write("Press to return")
             else:
                 f.write("Raw: " + str(data) + "#")
         
@@ -81,4 +82,5 @@ def get_history_content(index):
         return "File not found"
 
 print(f"History files count: {len(get_history_files())}")
+
 

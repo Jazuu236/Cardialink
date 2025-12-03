@@ -16,7 +16,7 @@ import kubios
 # -------------------------
 # Logo
 # -------------------------
-def show_logo(oled, width=128, height=64, duration=0):
+def show_logo(oled, width=128, height=64, duration=2):
     logo = framebuf.FrameBuffer(bytearray(startup_logo), width, height, framebuf.MONO_VLSB)
     oled.fill(0)
     oled.blit(logo, 0, 0)
@@ -151,7 +151,7 @@ def pulse_timer_callback(timer, Menu, Measurer):
 # Main
 # -------------------------
 def __main__():
-    show_logo(oled, duration=0)
+    show_logo(oled, duration=2)
     Menu = menu_state.cMenuState()
     Measurer = measurer.cMeasurer()
     Kubios = kubios.KubiosHandler()

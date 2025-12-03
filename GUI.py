@@ -46,9 +46,9 @@ class cGUI:
         else:
             self.oled.text("   History", 0, 30)
         if (current_selection == 4):
-            self.oled.text("-> Settings EXIT", 0, 40)
+            self.oled.text("-> Turn OFF", 0, 40)
         else:
-            self.oled.text("   Settings EXIT", 0, 40)
+            self.oled.text("   Turn OFF", 0, 40)
 
         # Draw the animated arrow at the bottom
         height = int(abs(-0.25) * (self.oled.height // 2)) 
@@ -255,7 +255,7 @@ class cGUI:
         if kubios_handler.waiting_for_response:
             dots = ((time.ticks_ms() // 500) % 4)
             self.oled.text("Sending Data" + dots * ".", 0, 0)
-            self.oled.text("Wait for WiFi...", 0, 20)
+            self.oled.text("Analysing...", 0, 20)
             self.oled.show()
             return
 

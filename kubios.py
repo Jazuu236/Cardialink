@@ -55,4 +55,3 @@ class KubiosHandler:
                 self.mqtt_client.check_msg()
             except Exception as e:
                 print("MQTT Check Error:", e)
-

@@ -23,8 +23,8 @@ def hrv_analysis(ppi_data):
     if mean_ppi == 0:
         print("Mean PPI is zero, cannot compute HRV metrics.")
         return {
-            "Mean_PPI": 0,
             "Mean_HR": 0,
+            "Mean_PPI": 0,
             "SDNN": 0,
             "RMSSD": 0
         }
@@ -41,9 +41,8 @@ def hrv_analysis(ppi_data):
     rmssd = round((sum(diffs) / len(diffs)) ** 0.5)
 
     return {
-        "Mean_PPI": mean_ppi,
         "Mean_HR": mean_hr,
+        "Mean_PPI": mean_ppi,
         "SDNN": sdnn,
         "RMSSD": rmssd
     }
-
