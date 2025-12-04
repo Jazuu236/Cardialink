@@ -190,13 +190,13 @@ class cGUI:
 
         self.oled.show()
 
-    def draw_measure_kubios(self, start_ts):
+    def draw_measure_kubios(self, start_ts, Measurer):
         """
         Show the countdown timer for the Kubios analysis process.
         """
         self.oled.fill(0)
 
-        time_remaining = 30_000 - time.ticks_diff(time.ticks_ms(), start_ts)
+        time_remaining = 29_000 - time.ticks_diff(time.ticks_ms(), start_ts)
 
         self.oled.text("Kubios Analysis", 0, 0)
         self.oled.text("Measuring...", 0, 10)
@@ -204,6 +204,7 @@ class cGUI:
 
         if (time_remaining < 0):
             self.oled.fill(0)
+            self.oled.text("Sending...", 0, 0)
 
         self.oled.show()
 

@@ -12,6 +12,7 @@ class cMeasurer:
         self.CACHE_STORAGE_BEATS = []  # Stores detected peaks as cBeat objects
         self.leds = [Pin(pin, Pin.OUT) for pin in led_pins]
         self.PEAK_WAS_ALREADY_RECORDED = False
+        self.temp_restrict_updates = False
 
     class cBeat:
         def __init__(self, timestamp_ms):

@@ -107,6 +107,12 @@ def extract_ppi_for_kubios(Measurer):
 # Pulse Timer callback
 # -------------------------
 def pulse_timer_callback(timer, Menu, Measurer):
+
+    if (Measurer.temp_restrict_updates):
+        print("UPD:REST")
+        return
+
+
     if Menu.current_page not in (PAGE_MEASURE_HR, PAGE_HRV, PAGE_HRV_SHOW_RESULTS, PAGE_KUBIOS, PAGE_KUBIOS_SHOW_RESULTS):
         Measurer.clear_cache(Measurer.CACHETYPE_DYNAMIC)
         Measurer.clear_cache(Measurer.CACHETYPE_200)
@@ -215,26 +221,30 @@ def __main__():
             else:
                 gui.draw_analyzing()
                 if not kubios_sent:
+                    Measurer.temp_restrict_updates = True
                     ppi_list = extract_ppi_for_kubios(Measurer)
                     if len(ppi_list) > 2:
                         Kubios.send_analysis_request(ppi_list)
                     kubios_sent = True
+                    Measurer.temp_restrict_updates = False
                 Menu.current_page = PAGE_HRV_SHOW_RESULTS
                 
         elif Menu.current_page == PAGE_HRV_SHOW_RESULTS:
             gui.draw_measure_hrv_show_results(Measurer)
         elif Menu.current_page == PAGE_KUBIOS:
             if Menu.hrv_measurement_started_ts > time.ticks_ms() - 30000:
-                gui.draw_measure_kubios(Menu.hrv_measurement_started_ts)
+                gui.draw_measure_kubios(Menu.hrv_measurement_started_ts, Measurer)
                 kubios_sent = False
             else:
                 if not kubios_sent:
+                    Measurer.temp_restrict_updates = True
                     ppi_list = extract_ppi_for_kubios(Measurer)
                     if len(ppi_list) > 2:
                         Kubios.send_analysis_request(ppi_list)
                     else:
                         print("Not enough valid peaks found (Kubios)")
                     kubios_sent = True
+                    Measurer.temp_restrict_updates = False
                 Menu.current_page = PAGE_KUBIOS_SHOW_RESULTS
         elif Menu.current_page == PAGE_KUBIOS_SHOW_RESULTS:
             Kubios.check_messages()
