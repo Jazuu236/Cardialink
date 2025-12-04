@@ -213,12 +213,14 @@ def __main__():
                 gui.draw_measure_hrv(Menu.hrv_measurement_started_ts)
                 kubios_sent = False
             else:
+                gui.draw_analyzing()
                 if not kubios_sent:
                     ppi_list = extract_ppi_for_kubios(Measurer)
                     if len(ppi_list) > 2:
                         Kubios.send_analysis_request(ppi_list)
                     kubios_sent = True
                 Menu.current_page = PAGE_HRV_SHOW_RESULTS
+                
         elif Menu.current_page == PAGE_HRV_SHOW_RESULTS:
             gui.draw_measure_hrv_show_results(Measurer)
         elif Menu.current_page == PAGE_KUBIOS:

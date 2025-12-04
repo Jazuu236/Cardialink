@@ -270,21 +270,12 @@ class cGUI:
 
         # 3. Display the Kubios Data
         self.oled.text("Kubios Results:", 0, 0)
-        
-        # Row 1: Stress & Readiness
-        stress = results.get("stress_index", 0)
-        ready = results.get("readiness", 0)
-        self.oled.text("Strs:{:.1f} Rdy:{:.1f}".format(stress, ready), 0, 10)
-        
-        # Row 2: PNS & SNS (Parasympathetic/Sympathetic)
-        pns = results.get("pns_index", 0)
-        sns = results.get("sns_index", 0)
-        self.oled.text("PNS:{:.1f} SNS:{:.1f}".format(pns, sns), 0, 20)
 
-        # Row 3: Standard Metrics
-        hr = results.get("mean_hr_bpm", 0)
-        rmssd = results.get("rmssd_ms", 0)
-        self.oled.text("HR:{:.0f} RMSSD:{:.0f}".format(hr, rmssd), 0, 30)
+        self.oled.text("HR:{:.0f} bpm".format(results.get("mean_hr_bpm", 0)), 0, 10)
+        self.oled.text("PNS:{:.1f} SNS:{:.1f}".format(results.get("pns_index", 0), results.get("sns_index", 0)), 0, 20)
+        self.oled.text("RMSSD:{:.0f}".format(results.get("rmssd_ms", 0)), 0, 30)
+        self.oled.text("SDNN:{:.1f}".format(results.get("sdnn_ms", 0)), 0, 40)
+        self.oled.text("Stress:{:.1f}".format(results.get("stress_index", 0)), 0, 50)
         
         self.oled.show()
 
@@ -336,6 +327,15 @@ class cGUI:
             else:
                 self.oled.text("   " + display_text, 0, y_pos)
                 
+        self.oled.show()
+
+    def draw_analyzing(self):
+        """
+        Show a transition screen while calculating local HRV results.
+        """
+        self.oled.fill(0)
+        self.oled.text("Basic HRV", 0, 0)
+        self.oled.text("Measuring...", 0, 25)
         self.oled.show()
 
     def draw_history_file(self, text, scroll_offset=0):
