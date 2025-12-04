@@ -180,13 +180,14 @@ class cGUI:
         """
         self.oled.fill(0)
 
-        time_remaining = 30_000 - time.ticks_diff(time.ticks_ms(), start_ts)
+        time_remaining = 29_000 - time.ticks_diff(time.ticks_ms(), start_ts)
 
         self.oled.text("Measuring HRV...", 0, 0)
         self.oled.text("Please wait " + str(max(time_remaining // 1000, 0)) + "s", 0, 10)
 
         if (time_remaining < 0):
             self.oled.fill(0)
+            self.oled.text("Analysing...", 20, 30)
 
         self.oled.show()
 
@@ -204,7 +205,10 @@ class cGUI:
 
         if (time_remaining < 0):
             self.oled.fill(0)
-            self.oled.text("Sending...", 0, 0)
+            self.oled.text("Sending...", 30, 30)
+
+        if (Measurer.temp_restrict_updates):
+            self.oled.text("Send in progress", 0, 30)
 
         self.oled.show()
 
@@ -271,12 +275,11 @@ class cGUI:
 
         # 3. Display the Kubios Data
         self.oled.text("Kubios Results:", 0, 0)
-
         self.oled.text("HR:{:.0f} bpm".format(results.get("mean_hr_bpm", 0)), 0, 10)
-        self.oled.text("PNS:{:.1f} SNS:{:.1f}".format(results.get("pns_index", 0), results.get("sns_index", 0)), 0, 20)
-        self.oled.text("RMSSD:{:.0f}".format(results.get("rmssd_ms", 0)), 0, 30)
-        self.oled.text("SDNN:{:.1f}".format(results.get("sdnn_ms", 0)), 0, 40)
-        self.oled.text("Stress:{:.1f}".format(results.get("stress_index", 0)), 0, 50)
+        self.oled.text("PNS:{:.2f}".format(results.get("pns_index", 0)), 0, 20)
+        self.oled.text("SNS:{:.2f}".format(results.get("sns_index", 0)), 0, 30)
+        self.oled.text("RMSSD:{:.2f}".format(results.get("rmssd_ms", 0)), 0, 40)
+        self.oled.text("SDNN:{:.2f}".format(results.get("sdnn_ms", 0)), 0, 50)
         
         self.oled.show()
 
