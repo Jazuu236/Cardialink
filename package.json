@@ -1,0 +1,24 @@
+{
+  "urls": [
+    ["main.py", "http://localhost:8000/src/main.py"],
+    ["GUI.py", "http://localhost:8000/src/GUI.py"],
+    ["HRV.py", "http://localhost:8000/src/HRV.py"],
+    ["config.py", "http://localhost:8000/src/config.py"],
+    ["history.py", "http://localhost:8000/src/history.py"],
+    ["kubios.py", "http://localhost:8000/src/kubios.py"],
+    ["measurer.py", "http://localhost:8000/src/measurer.py"],
+    ["menu_state.py", "http://localhost:8000/src/menu_state.py"],
+    ["peak_processing.py", "http://localhost:8000/src/peak_processing.py"],
+    ["visual_binary_data.py", "http://localhost:8000/src/visual_binary_data.py"],
+    ["README.md", "http://localhost:8000/src/README.md"],
+
+    ["lib/fifo.py", "http://localhost:8000/src/pico-lib/fifo.py"],
+    ["lib/filefifo.py", "http://localhost:8000/src/pico-lib/filefifo.py"],
+    ["lib/led.py", "http://localhost:8000/src/pico-lib/led.py"],
+    ["lib/piotimer.py", "http://localhost:8000/src/pico-lib/piotimer.py"],
+    ["lib/ssd1306.mpy", "http://localhost:8000/src/pico-lib/ssd1306.mpy"],
+    ["lib/umqtt/simple.mpy", "http://localhost:8000/src/pico-lib/umqtt/simple.mpy"]
+  ],
+  "deps": [],
+  "version": "0.1"
+}
