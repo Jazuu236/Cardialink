@@ -5,7 +5,20 @@ Components used:
 - Crowtail Pulse sensor (photoplethysmography - PPG)
 - SSD1306 OLED Display
 - Rotary encoder
-(tähän alle jostain kuvii laitteesta ja mittauksesta)
+
+![image0 (29)](https://github.com/user-attachments/assets/e54de8fd-adca-4440-b93c-01c61ee1594e)
+![image1 (24)](https://github.com/user-attachments/assets/d22c501a-6f0d-4302-bc62-55147a9c2d9e)
+![image3 (2)](https://github.com/user-attachments/assets/4e5dbe9f-e778-4276-950f-f0a60f4c5374)
+![image4 (1)](https://github.com/user-attachments/assets/96151952-b220-4fc1-b6fb-a285127cb0e2)
+![image5 (1)](https://github.com/user-attachments/assets/d621d639-bf0c-40bc-b962-f59c973583b9)
+
+
+
+
+
+
+
+
 
 Operating principle
 
