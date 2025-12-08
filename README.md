@@ -1,5 +1,16 @@
 Cardialink Heart rate meter
 
+How to setup:
+
+1. Download the ZIP file of the repository.
+2. Once downloaded, extract the files.
+3. Connect your Raspberry Pi Pico while holding the BOOTSEL button.
+   - If you haven’t reset (“nuked”) the Pico before, follow the guide here: https://www.raspberrypi.com/documentation/microcontrollers/pico-series.html#resetting-flash-memory
+4. The Pico will appear as a USB drive. Copy the file RPI_PICO_W-20250911-v1.26.1.uf2 onto the Pico drive.
+5. After the Pico reboots, open install.json and wait for the installation process to complete.
+6. When the installation is finished, press the reset button or unplug and reconnect the Pico.
+7. Enjoy the Cardialink experience.
+
 Components used:
 - Rasberry Pi Pico W
 - Crowtail Pulse sensor (photoplethysmography - PPG)
