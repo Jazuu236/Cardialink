@@ -6,7 +6,7 @@ How to setup:
 
 2. Once downloaded, extract the files.
 
-3. Reset (“nuke”) the Pico only if needed:
+3. Reset (“nuke”) the Pico only if needed: https://www.raspberrypi.com/documentation/microcontrollers/pico-series.html#resetting-flash-memory
    - If you haven’t reset the Pico before, connect the Pico to your computer while holding the BOOTSEL button, and copy flash_nuke.uf2 to the Pico drive.
    - The Pico will reboot. After it restarts, disconnect it.
 
