@@ -5,10 +5,10 @@ def hrv_analysis(ppi_data):
     if len(ppi_data) <= 2:
         print("Not enough PPI data for HRV analysis.")
         return {
-            "Mean_PPI": 0,
-            "Mean_HR": 0,
-            "SDNN": 0,
-            "RMSSD": 0
+            "Mean_PPI": None,
+            "Mean_HR": None,
+            "SDNN": None,
+            "RMSSD": None
         }
     for ppi in ppi_data:
         if ppi <= 0:
@@ -23,10 +23,10 @@ def hrv_analysis(ppi_data):
     if mean_ppi == 0:
         print("Mean PPI is zero, cannot compute HRV metrics.")
         return {
-            "Mean_HR": 0,
-            "Mean_PPI": 0,
-            "SDNN": 0,
-            "RMSSD": 0
+            "Mean_HR": None,
+            "Mean_PPI": None,
+            "SDNN": None,
+            "RMSSD": None
         }
     
     # Mean HR
