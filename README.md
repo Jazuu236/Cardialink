@@ -1,6 +1,8 @@
 Cardialink Heart rate meter
+![20251210_203702(1)](https://github.com/user-attachments/assets/38dbf03d-ffcb-4d5a-bb98-76201e0c1dc5)
 
 How to setup:
+
 
 1. Download the ZIP file of the repository.
 
