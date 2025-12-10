@@ -377,3 +377,4 @@ class cGUI:
             self.oled.text(lines[line_index], 0, i * 10)
             
         self.oled.show()
+
