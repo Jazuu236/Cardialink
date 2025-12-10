@@ -338,8 +338,8 @@ class cGUI:
         Show a transition screen while calculating local HRV results.
         """
         self.oled.fill(0)
-        self.oled.text("Basic HRV", 0, 0)
-        self.oled.text("Measuring...", 0, 25)
+        self.oled.text("Basic HRV", 30, 5)
+        self.oled.text("Measuring...", 20, 30)
         self.oled.show()
 
     def draw_history_file(self, text, scroll_offset=0):

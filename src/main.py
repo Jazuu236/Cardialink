@@ -4,6 +4,7 @@ from ssd1306 import SSD1306_I2C
 from machine import Pin, ADC, I2C, Timer
 from filefifo import Filefifo
 from visual_binary_data import startup_logo
+from config import connect_wlan
 import time
 import GUI
 import measurer
@@ -16,12 +17,11 @@ import kubios
 # -------------------------
 # Logo
 # -------------------------
-def show_logo(oled, width=128, height=64, duration=2):
+def show_logo(oled, width=128, height=64):
     logo = framebuf.FrameBuffer(bytearray(startup_logo), width, height, framebuf.MONO_VLSB)
     oled.fill(0)
     oled.blit(logo, 0, 0)
     oled.show()
-    time.sleep(duration)
 
 # -------------------------
 # GUI Page constants
@@ -157,7 +157,15 @@ def pulse_timer_callback(timer, Menu, Measurer):
 # Main
 # -------------------------
 def __main__():
-    show_logo(oled, duration=2)
+    
+    show_logo(oled)
+    start_time = time.ticks_ms()
+
+    try:
+        connect_wlan() 
+    except Exception as e:
+        print("Network init failed:", e)
+    
     Menu = menu_state.cMenuState()
     Measurer = measurer.cMeasurer()
     Kubios = kubios.KubiosHandler()
@@ -167,8 +175,11 @@ def __main__():
     timer = Timer()
     timer.init(freq=100, mode=Timer.PERIODIC, callback=lambda t: pulse_timer_callback(t, Menu, Measurer))
 
+    while time.ticks_diff(time.ticks_ms(), start_time) < 3000:
+        time.sleep(0.1)
+
     gui = GUI.cGUI(oled)
-    gui.draw_page_init(Measurer)
+    Measurer.control_led(0) 
 
     Menu.current_page = PAGE_MAINMENU
     current_selection_index = 0
@@ -176,7 +187,7 @@ def __main__():
     Menu.history_files = []
     Menu.selected_history_content = ""
     i = 0
-
+    
     while True:
         i += 1
         Kubios.check_messages()
